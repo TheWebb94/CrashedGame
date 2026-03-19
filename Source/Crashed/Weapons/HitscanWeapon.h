@@ -7,6 +7,12 @@ UCLASS()
 class CRASHED_API AHitscanWeapon : public ABaseWeapon
 {
 	GENERATED_BODY()
+	
+	
+	
 public:
 	virtual void Fire(const FVector& Origin, const FVector& AimPoint) override;
+	AHitscanWeapon();
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float Damage = 25.f;
 };

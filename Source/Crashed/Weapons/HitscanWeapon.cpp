@@ -1,6 +1,14 @@
 #include "HitscanWeapon.h"
 #include "DrawDebugHelpers.h"
+#include "Crashed/HealthComponent.h"
 #include "Engine/World.h"
+
+
+AHitscanWeapon::AHitscanWeapon()
+{
+	bAutoFire = true;
+	FireRate = 1.f;
+}
 
 void AHitscanWeapon::Fire(const FVector& Origin, const FVector& AimPoint)
 {
@@ -21,6 +29,14 @@ void AHitscanWeapon::Fire(const FVector& Origin, const FVector& AimPoint)
 
 	if (bHit)
 	{
+		if (AActor* HitActor = Hit.GetActor())
+		{
+			UHealthComponent* HealthComp = HitActor->FindComponentByClass<UHealthComponent>();
+			if (HealthComp)
+			{
+				HealthComp->ApplyDamage(Damage);
+			}
+		}
 		DrawDebugLine(GetWorld(), Origin, Hit.ImpactPoint, FColor::Cyan, false, 1.f, 0, 2.f);
 		DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 8.f, 8, FColor::White, false, 1.f);
 	}

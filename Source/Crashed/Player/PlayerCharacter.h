@@ -97,4 +97,5 @@ private:
     void RotateTurret(float DeltaTime);
     bool bIsFiring = false;
     FTimerHandle FireTimerHandle;
+    float LastFireTime = -1.f;
 };

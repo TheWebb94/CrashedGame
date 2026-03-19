@@ -235,8 +235,15 @@ void APlayerCharacter::StopSprint()
 
 void APlayerCharacter::Fire()
 {
+    if (!EquippedWeapon) return;
+    
+    const float MinInterval = 1.f / FMath::Max(EquippedWeapon->FireRate, 0.01f);
+    const float Now = GetWorld()->GetTimeSeconds();
+    if (Now - LastFireTime < MinInterval) return;
+    LastFireTime = Now;
+
     FVector AimPoint;
-    if (!GetMouseAimPoint(AimPoint) || !EquippedWeapon) return;
+    if (!GetMouseAimPoint(AimPoint)) return;
 
     EquippedWeapon->Fire(GetActorLocation(), AimPoint);
 }
