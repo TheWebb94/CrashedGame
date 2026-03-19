@@ -3,6 +3,8 @@
 #include "GameFramework/Actor.h"
 #include "WeaponProjectile.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnExplode);
+
 UCLASS()
 class CRASHED_API AWeaponProjectile : public AActor
 {
@@ -24,6 +26,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Projectile")
 	float ExplosionRadius = 200.f;
+	
+	UPROPERTY(BlueprintAssignable, Category = "Projectile")
+	FOnExplode OnExplode;
 	
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,

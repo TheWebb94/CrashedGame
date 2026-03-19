@@ -91,8 +91,11 @@ void AWeaponProjectile::Explode()
 	bLaunched = false;
 
 	const FVector Center = GetActorLocation();
-
-	DrawDebugSphere(GetWorld(), Center, ExplosionRadius, 16, FColor::Orange, false, 2.f, 0, 3.f);
+	
+	//for calling functionality in blueprint (NS)
+	OnExplode.Broadcast();
+	
+	//DrawDebugSphere(GetWorld(), Center, ExplosionRadius, 16, FColor::Orange, false, 2.f, 0, 3.f);
 
 	TArray<AActor*> OverlappedActors;
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -102,6 +105,10 @@ void AWeaponProjectile::Explode()
 	ActorsToIgnore.Add(this);
 	//ActorsToIgnore.Add(Player);
 
+	
+	
+	
+	//Gets a list of actors that overlap with explosion raidus
 	UKismetSystemLibrary::SphereOverlapActors(
 		GetWorld(), Center, ExplosionRadius, ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
 
