@@ -44,6 +44,6 @@ void AHitscanWeapon::Fire(const FVector& Origin, const FVector& AimPoint)
 			}
 		}
 	}
-
-	WeaponFired.Broadcast(Origin, BeamEnd, bHit);
+	
+	WeaponFired.Broadcast(Origin, BeamEnd, bHit, Hit.Location);
 }

@@ -4,7 +4,7 @@
 #include "HitscanWeapon.generated.h"
 
 class UNiagaraSystem;
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FWeaponFired, FVector, BeamStart, FVector, BeamEnd, bool, bHit);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FWeaponFired, FVector, BeamStart, FVector, BeamEnd, bool, bHit, FVector, ImpactPoint);
 
 UCLASS()
 class CRASHED_API AHitscanWeapon : public ABaseWeapon

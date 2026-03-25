@@ -92,7 +92,7 @@ void AWeaponProjectile::Explode()
 
 	const FVector Center = GetActorLocation();
 	
-	//for calling functionality in blueprint (NS)
+	//for calling functionality in blueprint (NS_)
 	OnExplode.Broadcast();
 	
 	//DrawDebugSphere(GetWorld(), Center, ExplosionRadius, 16, FColor::Orange, false, 2.f, 0, 3.f);
