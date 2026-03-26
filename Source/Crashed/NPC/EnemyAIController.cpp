@@ -14,12 +14,24 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
+	if (ABaseEnemy* const Enemy = Cast<ABaseEnemy>(InPawn))
+	{
+		if (UBehaviorTree* const tree = Enemy->GetBehaviorTree())
+		{
+			UBlackboardComponent* b;
+			UseBlackboard(tree->BlackboardAsset, b);
+			Blackboard = b;
+			RunBehaviorTree(tree);
+		}
+	}
+	
+	/*
 	ABaseEnemy* Enemy = Cast<ABaseEnemy>(InPawn);
 	if (Enemy && Enemy->BehaviorTreeAsset)
 	{
 		DetectionRadius = Enemy->DetectionRadius;
 		RunBehaviorTree(Enemy->BehaviorTreeAsset);
-	}
+	}*/
 }
 
 // Tick — keeps the Blackboard up to date for the BT to read

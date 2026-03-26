@@ -23,6 +23,8 @@ protected:
 
 public:
     virtual void Tick(float DeltaTime) override;
+    
+    UBehaviorTree* GetBehaviorTree() const { return BehaviorTreeAsset; }
 
     // --- Components ---
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
