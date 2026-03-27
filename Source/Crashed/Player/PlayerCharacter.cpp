@@ -54,12 +54,14 @@ void APlayerCharacter::BeginPlay()
 
     for (TSubclassOf<ABaseWeapon>& WeaponClass : WeaponClasses)
     {
+        
+        FVector SpawnLocation = FVector(0,0,-3000.0f); // spawns these weapons below map (im sure theres a better way to do this...)
         if (!WeaponClass) continue;
         FActorSpawnParameters Params;
         Params.Owner = this;
         Params.Instigator = this;
         ABaseWeapon* W = GetWorld()->SpawnActor<ABaseWeapon>(
-            WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
+            WeaponClass, SpawnLocation, FRotator::ZeroRotator, Params);
         if (W) SpawnedWeapons.Add(W);
     }
 
