@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/Tasks/BTTask_BlackboardBase.h"
-#include "MyPlayerController.generated.h"
 #include "EnemyAIController.h"
 
 #include "BTT_SetTargetLocationAsPlayer.generated.h"
