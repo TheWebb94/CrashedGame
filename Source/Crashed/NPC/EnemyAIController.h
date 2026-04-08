@@ -20,7 +20,5 @@ protected:
 
 private:
 	void UpdateBlackboard();
-
-	// Cached from the enemy on possess
-	float DetectionRadius = 0.f;
+	
 };

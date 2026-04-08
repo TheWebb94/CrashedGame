@@ -24,14 +24,6 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 			RunBehaviorTree(tree);
 		}
 	}
-	
-	/*
-	ABaseEnemy* Enemy = Cast<ABaseEnemy>(InPawn);
-	if (Enemy && Enemy->BehaviorTreeAsset)
-	{
-		DetectionRadius = Enemy->DetectionRadius;
-		RunBehaviorTree(Enemy->BehaviorTreeAsset);
-	}*/
 }
 
 // Tick — keeps the Blackboard up to date for the BT to read
@@ -56,8 +48,15 @@ void AEnemyAIController::UpdateBlackboard()
 	const APawn* ControlledPawn = GetPawn();
 	if (!ControlledPawn) return;
 
+	// Read DetectionRadius directly from the enemy each tick — supports runtime changes
+	float EffectiveDetectionRadius = 0.f;
+	if (const ABaseEnemy* Enemy = Cast<ABaseEnemy>(ControlledPawn))
+	{
+		EffectiveDetectionRadius = Enemy->DetectionRadius;
+	}
+
 	const float DistSq = FVector::DistSquared(ControlledPawn->GetActorLocation(), Player->GetActorLocation());
-	if (DistSq <= DetectionRadius * DetectionRadius)
+	if (DistSq <= EffectiveDetectionRadius * EffectiveDetectionRadius)
 	{
 		GetBlackboardComponent()->SetValueAsObject(BB_PlayerActor, Player);
 		GetBlackboardComponent()->SetValueAsVector(BB_TargetLocation, Player->GetActorLocation());
@@ -68,3 +67,4 @@ void AEnemyAIController::UpdateBlackboard()
 		GetBlackboardComponent()->ClearValue(BB_TargetLocation);
 	}
 }
+
