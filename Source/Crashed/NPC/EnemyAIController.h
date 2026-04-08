@@ -10,15 +10,13 @@ class CRASHED_API AEnemyAIController : public AAIController
 	GENERATED_BODY()
 
 public:
-	// Blackboard key names — reference these from BT Tasks to avoid magic strings
-	static const FName BB_PlayerActor;    // Object: the player pawn
-	static const FName BB_TargetLocation; // Vector: last known player location
+	static const FName BB_PlayerActor;
+	static const FName BB_TargetLocation;
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void Tick(float DeltaTime) override;
 
-private:
-	void UpdateBlackboard();
-	
+	// Protected + virtual so subclasses (e.g. AAntAIController) can override it
+	virtual void UpdateBlackboard();
 };
