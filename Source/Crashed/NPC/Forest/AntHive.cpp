@@ -63,10 +63,6 @@ void AAntHive::HealTick()
 
         Ant->HealthComponent->ApplyHealth(HealTickAmount);
 
-        // If the ant came home to heal and is now at full health, release it
-        if (Ant->bReturningHome && Ant->HealthComponent->GetHealthPercent() >= 1.0f)
-        {
-            Ant->CompleteHealing();
-        }
+       
     }
 }

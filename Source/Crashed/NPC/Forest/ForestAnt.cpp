@@ -1,7 +1,6 @@
 #include "ForestAnt.h"
 #include "AntQueen.h"
 #include "AntHive.h"
-#include "AAntAIController.h"
 #include "Crashed/HealthComponent.h"
 #include "Crashed/NPC/EnemyAIController.h"
 
@@ -17,11 +16,6 @@ AForestAnt::AForestAnt()
 void AForestAnt::BeginPlay()
 {
     Super::BeginPlay();
-
-     if (HealthComponent)
-    {
-        HealthComponent->OnHealthChanged.AddDynamic(this, &AForestAnt::OnAntHealthChanged);
-    }
 }
 
 void AForestAnt::RegisterWithQueen(AAntQueen* InQueen)
