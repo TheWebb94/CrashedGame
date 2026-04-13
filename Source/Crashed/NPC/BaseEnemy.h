@@ -83,6 +83,8 @@ protected:
     // Override to play a death animation or drop loot before destroying.
     UFUNCTION(BlueprintNativeEvent, Category = "Enemy|Events")
     void OnDeath();
+    
+    UFUNCTION()
     virtual void OnDeath_Implementation();
 
     // Rotates BaseMesh to face the movement direction each tick
