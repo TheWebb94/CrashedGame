@@ -10,13 +10,16 @@ class CRASHED_API AEnemyAIController : public AAIController
 	GENERATED_BODY()
 
 public:
-	static const FName BB_PlayerActor;
+	static const FName BB_TargetActor;  
 	static const FName BB_TargetLocation;
+	static const FName BB_IsReturningHome;   
+	static const FName BB_HiveLocation;     
+	static const FName BB_TargetAnt;         
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void Tick(float DeltaTime) override;
 
-	// Protected + virtual so subclasses (e.g. AAntAIController) can override it
+
 	virtual void UpdateBlackboard();
 };

@@ -52,6 +52,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnDeath_Implementation() override;
+	virtual void PerformAttack_Implementation() override;
+
 
 	// Health % below which this ant turns back to the hive.
 	// Set automatically in BeginPlay per type; can be overridden in Blueprint.

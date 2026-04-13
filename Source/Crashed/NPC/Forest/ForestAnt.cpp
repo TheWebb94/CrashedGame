@@ -57,18 +57,34 @@ void AForestAnt::OnDeath_Implementation()
     Super::OnDeath_Implementation();
 }
 
+void AForestAnt::PerformAttack_Implementation()
+{
+    if (AntType == EAntType::Healer) return;
+
+    APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+    if (!Player) return;
+
+    if (FVector::DistSquared(GetActorLocation(), Player->GetActorLocation())
+            > AttackRange * AttackRange) return;
+
+    if (UHealthComponent* HC = Player->FindComponentByClass<UHealthComponent>())
+    {
+        HC->ApplyDamage(AttackDamage);
+    }
+}
+
 void AForestAnt::OnAntHealthChanged(float NewHealth, float MaxHealth)
 {
-    if (bReturningHome) return;                     // already heading home
-    if (!HomeHive.IsValid()) return;                // nowhere to go
-    if (ReturnHealthThreshold <= 0.f) return;       // healer — never returns
+    if (bReturningHome) return;                    
+    if (!HomeHive.IsValid()) return;              
+    if (ReturnHealthThreshold <= 0.f) return;       
     if (MaxHealth <= 0.f) return;
 
     if ((NewHealth / MaxHealth) < ReturnHealthThreshold)
     {
         bReturningHome = true;
         RestoredDetectionRadius = DetectionRadius;
-        DetectionRadius = 0.f; // stop chasing the player while retreating
+        DetectionRadius = 0.f; 
     }
 }
 

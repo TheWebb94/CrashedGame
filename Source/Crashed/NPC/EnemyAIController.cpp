@@ -5,9 +5,12 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-// Blackboard key name constants — reference these from BT Tasks
-const FName AEnemyAIController::BB_PlayerActor    = TEXT("PlayerActor");
+// Blackboard key name constants
+const FName AEnemyAIController::BB_TargetActor    = TEXT("TargetActor");
 const FName AEnemyAIController::BB_TargetLocation = TEXT("TargetLocation");
+const FName AEnemyAIController::BB_IsReturningHome = TEXT("IsReturningHome");
+const FName AEnemyAIController::BB_HiveLocation    = TEXT("HiveLocation");
+const FName AEnemyAIController::BB_TargetAnt       = TEXT("TargetAnt");
 
 // OnPossess — runs the Behavior Tree and initialises the Blackboard
 void AEnemyAIController::OnPossess(APawn* InPawn)
@@ -40,7 +43,7 @@ void AEnemyAIController::UpdateBlackboard()
 	APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	if (!IsValid(Player))
 	{
-		GetBlackboardComponent()->ClearValue(BB_PlayerActor);
+		GetBlackboardComponent()->ClearValue(BB_TargetActor);
 		GetBlackboardComponent()->ClearValue(BB_TargetLocation);
 		return;
 	}
@@ -58,12 +61,12 @@ void AEnemyAIController::UpdateBlackboard()
 	const float DistSq = FVector::DistSquared(ControlledPawn->GetActorLocation(), Player->GetActorLocation());
 	if (DistSq <= EffectiveDetectionRadius * EffectiveDetectionRadius)
 	{
-		GetBlackboardComponent()->SetValueAsObject(BB_PlayerActor, Player);
+		GetBlackboardComponent()->SetValueAsObject(BB_TargetActor, Player);
 		GetBlackboardComponent()->SetValueAsVector(BB_TargetLocation, Player->GetActorLocation());
 	}
 	else
 	{
-		GetBlackboardComponent()->ClearValue(BB_PlayerActor);
+		GetBlackboardComponent()->ClearValue(BB_TargetActor);
 		GetBlackboardComponent()->ClearValue(BB_TargetLocation);
 	}
 }
