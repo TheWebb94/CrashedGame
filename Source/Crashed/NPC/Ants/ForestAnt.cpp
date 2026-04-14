@@ -13,10 +13,6 @@ AForestAnt::AForestAnt()
     AIControllerClass = AEnemyAIController::StaticClass();
 }
 
-void AForestAnt::BeginPlay()
-{
-    Super::BeginPlay();
-}
 
 void AForestAnt::RegisterWithQueen(AAntQueen* InQueen)
 {
@@ -27,15 +23,21 @@ void AForestAnt::RegisterWithQueen(AAntQueen* InQueen)
     }
 }
 
+void AForestAnt::BeginPlay()
+{
+    Super::BeginPlay();
+}
+
+void AForestAnt::OnDeath_Implementation()
+{
+    Super::OnDeath_Implementation();
+}
+
 void AForestAnt::SetHomeHive(AAntHive* InHive)
 {
     HomeHive = InHive;
 }
 
-void AForestAnt::OnDeath_Implementation()
-{
-      Super::OnDeath_Implementation();
-}
 
 void AForestAnt::PerformAttack_Implementation()
 {

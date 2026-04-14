@@ -59,10 +59,10 @@ void AAntHive::HealTick()
             continue;
         }
 
-        if (!Ant->HealthComponent) continue;
-
-        Ant->HealthComponent->ApplyHealth(HealTickAmount);
-
-       
+        if (Ant->HealthComponent)
+        {
+            Ant->HealthComponent->ApplyHealth(HealTickAmount);
+        }
+          
     }
 }

@@ -27,7 +27,9 @@ public:
 	EAntType AntType = EAntType::Worker;
 
 	// Set by the queen after spawning — lets the AI controller redirect movement
-	TWeakObjectPtr<AAntHive> HomeHive;
+	UPROPERTY(BlueprintReadOnly, Category = "Ant")
+	TWeakObjectPtr<AAntHive> HomeHive = nullptr;
+	
 	void SetHomeHive(AAntHive* InHive);
 	
 	// Called by the queen after spawning

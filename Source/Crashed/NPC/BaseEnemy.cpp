@@ -13,7 +13,11 @@ ABaseEnemy::ABaseEnemy()
 
     // Mesh rotation is driven manually in RotateBase — same pattern as APlayerCharacter
     bUseControllerRotationYaw = false;
-    GetCharacterMovement()->bOrientRotationToMovement = false;
+    bUseControllerRotationYaw = false;
+    bUseControllerRotationPitch = false;
+    bUseControllerRotationRoll = false;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(.0f, 600.f, .0f);
     GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
 
     BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));

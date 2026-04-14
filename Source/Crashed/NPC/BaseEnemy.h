@@ -2,7 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
 #include "BaseEnemy.generated.h"
+
 
 class UHealthComponent;
 class ABaseWeapon;
@@ -61,9 +64,13 @@ public:
 
     // --- Behavior Tree ---
     // Assign this in the child Blueprint — EnemyAIController runs it on possess
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|AI")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy|AI")
     UBehaviorTree* BehaviorTreeAsset;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    class APatrolPath* PatrolPath;
+
+    
     // --- Delegate ---
     UPROPERTY(BlueprintAssignable, Category = "Enemy|Events")
     FOnEnemyDeath OnEnemyDeath;
