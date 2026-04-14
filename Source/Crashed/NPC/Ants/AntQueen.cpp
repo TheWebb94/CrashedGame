@@ -83,6 +83,8 @@ void AAntQueen::SpawnAnt(TSubclassOf<AForestAnt> AntClass, TArray<TWeakObjectPtr
     {
         NewAnt->RegisterWithQueen(this);
         NewAnt->SetHomeHive(HomeHive);  // pass hive reference so ant can return home
+        NewAnt->PatrolPath = AntPatrolPath; 
+        
         TrackingArray.Add(NewAnt);
     }
 }

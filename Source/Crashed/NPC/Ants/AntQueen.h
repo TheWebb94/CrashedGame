@@ -6,6 +6,7 @@
 
 class AForestAnt;
 class AAntHive;
+class APatrolPath;
 
 UCLASS(Abstract)
 class CRASHED_API AAntQueen : public ABaseEnemy
@@ -21,7 +22,10 @@ public:
     // Called by ants (via OnEnemyDeath delegate) when they die
     UFUNCTION()
     void OnAntDied(ABaseEnemy* DeadAnt);
-
+    
+    UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Queen|Patrol")
+    APatrolPath* AntPatrolPath;
+    
 protected:
     virtual void BeginPlay() override;
 
