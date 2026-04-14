@@ -2,13 +2,11 @@
 
 #include "AIController.h"
 #include "Components/SplineComponent.h"
-#include "NPC\BaseEnemy.h"
-#include "NPC\PatrolPath.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
-
-
 #include "BTTask_GetPathPoints.h"
+#include "Crashed/NPC/BaseEnemy.h"
+#include "Crashed/NPC/PatrolPath.h"
 
 UBTTask_GetPathPoints::UBTTask_GetPathPoints()
 {

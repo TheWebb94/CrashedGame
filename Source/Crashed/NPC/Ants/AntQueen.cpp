@@ -10,6 +10,12 @@ AAntQueen::AAntQueen()
     DetectionRadius = 0.f;
 }
 
+void AAntQueen::ReceiveFood(float Amount)
+{
+    FoodSupply += Amount;
+}
+
+
 void AAntQueen::BeginPlay()
 {
     Super::BeginPlay();
@@ -24,10 +30,8 @@ void AAntQueen::BeginPlay()
     SpawnInitialHealers();
 }
 
-// -----------------------------------------------------------------------
-// Routine spawning — maintains worker/soldier ratio
-// -----------------------------------------------------------------------
 
+// Routine spawning — maintains worker/soldier ratio
 void AAntQueen::CheckAndSpawn()
 {
     PurgeDeadEntries();
@@ -49,8 +53,18 @@ void AAntQueen::CheckAndSpawn()
     }
     else if (NumWorkers < MaxWorkers)
     {
-        SpawnAnt(WorkerAntClass, AliveWorkers);
+        if (AliveWorkers.Num() < MinWorkersBeforeFoodCost)
+        {
+            SpawnAnt(WorkerAntClass, AliveWorkers);
+        }
+        else if (FoodSupply >= FoodCostPerSpawn)
+        {
+            FoodSupply -= FoodCostPerSpawn;
+            SpawnAnt(WorkerAntClass, AliveWorkers);
+        }
+        // else: not enough food, skip worker spawn this tick
     }
+
 }
 
 void AAntQueen::SpawnAnt(TSubclassOf<AForestAnt> AntClass, TArray<TWeakObjectPtr<AForestAnt>>& TrackingArray)

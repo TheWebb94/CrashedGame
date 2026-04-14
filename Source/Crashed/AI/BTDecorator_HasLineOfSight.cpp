@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
+#include "BTTask_GetPathPoints.h"
+#include "BTDecorator_HasLineOfSight.h"
 #include "AIController.h"
-#include "BaseEnemy.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Bool.h"
+#include "Crashed/NPC/BaseEnemy.h"
 
-#include "BTDecorator_HasLineOfSight.h"
 
 UBTDecorator_HasLineOfSight::UBTDecorator_HasLineOfSight()
 {

@@ -15,6 +15,9 @@ class CRASHED_API AAntQueen : public ABaseEnemy
 public:
     AAntQueen();
 
+    UFUNCTION(BlueprintCallable, Category = "Queen|Food")
+    void ReceiveFood(float Amount);
+
     // Called by ants (via OnEnemyDeath delegate) when they die
     UFUNCTION()
     void OnAntDied(ABaseEnemy* DeadAnt);
@@ -22,7 +25,15 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    // --- Worker / Soldier spawning ---
+   
+    // Min live workers before food is required for further spawns
+    UPROPERTY(EditDefaultsOnly, Category = "Queen|Food")
+    int32 MinWorkersBeforeFoodCost = 8;
+
+    // Food units consumed per additional worker spawn
+    UPROPERTY(EditDefaultsOnly, Category = "Queen|Food")
+    float FoodCostPerSpawn = 3.f;
+
     UPROPERTY(EditDefaultsOnly, Category = "Queen|Spawning")
     TSubclassOf<AForestAnt> WorkerAntClass;
 
@@ -30,7 +41,7 @@ protected:
     TSubclassOf<AForestAnt> SoldierAntClass;
 
     UPROPERTY(EditDefaultsOnly, Category = "Queen|Spawning")
-    int32 MaxWorkers = 10;
+    int32 MaxWorkers = 50;
 
     UPROPERTY(EditDefaultsOnly, Category = "Queen|Spawning")
     int32 MaxSoldiers = 15;
@@ -39,7 +50,7 @@ protected:
     float WorkerToSoldierRatio = 2.0f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Queen|Spawning")
-    float SpawnInterval = 10.0f;
+    float SpawnInterval = 5.0f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Queen|Spawning")
     float SpawnRadius = 400.0f;
@@ -79,10 +90,12 @@ private:
     TArray<TWeakObjectPtr<AForestAnt>> AliveHealers;
 
     FTimerHandle SpawnTimerHandle;
-
+    
     bool bThreshold66Triggered = false;
     bool bThreshold33Triggered = false;
 
+    float FoodSupply = 0.f;
+    
     void CheckAndSpawn();
     void SpawnAnt(TSubclassOf<AForestAnt> AntClass, TArray<TWeakObjectPtr<AForestAnt>>& TrackingArray);
     void PurgeDeadEntries();

@@ -1,6 +1,7 @@
 #include "ForestAnt.h"
 #include "AntQueen.h"
 #include "AntHive.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Crashed/HealthComponent.h"
 #include "Crashed/NPC/EnemyAIController.h"
 
@@ -23,6 +24,12 @@ void AForestAnt::RegisterWithQueen(AAntQueen* InQueen)
     }
 }
 
+void AForestAnt::SetCarryingFood(bool bCarrying, float Amount)
+{
+    bIsCarryingFood   = bCarrying;
+    CarriedFoodAmount = bCarrying ? Amount : 0.f;
+}
+
 void AForestAnt::BeginPlay()
 {
     Super::BeginPlay();
@@ -36,6 +43,15 @@ void AForestAnt::OnDeath_Implementation()
 void AForestAnt::SetHomeHive(AAntHive* InHive)
 {
     HomeHive = InHive;
+    if (InHive)
+    {
+        if (AEnemyAIController* AIC = Cast<AEnemyAIController>(GetController()))
+        {
+            if (AIC->BBC)
+                AIC->BBC->SetValueAsVector(TEXT("HomeLocation"),
+                                           InHive->GetActorLocation());
+        }
+    }
 }
 
 

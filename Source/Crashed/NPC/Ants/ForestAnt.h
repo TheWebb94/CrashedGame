@@ -23,6 +23,11 @@ class CRASHED_API AForestAnt : public ABaseEnemy
 public:
 	AForestAnt();
 
+	void SetCarryingFood(bool bCarrying, float Amount = 0.f);
+	bool  IsCarryingFood()       const { return bIsCarryingFood; }
+	float GetCarriedFoodAmount() const { return CarriedFoodAmount; }
+
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ant")
 	EAntType AntType = EAntType::Worker;
 
@@ -35,6 +40,7 @@ public:
 	// Called by the queen after spawning
 	void RegisterWithQueen(AAntQueen* InQueen);
 
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnDeath_Implementation() override;
@@ -42,4 +48,8 @@ protected:
 
 private:
 	TWeakObjectPtr<AAntQueen> Queen;
+	
+	bool  bIsCarryingFood   = false;
+	float CarriedFoodAmount = 0.f;
+
 };
