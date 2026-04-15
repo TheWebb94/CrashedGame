@@ -29,7 +29,7 @@ bool UBTDecorator_IsLowHealth::CalculateRawConditionValue(UBehaviorTreeComponent
 	UHealthComponent* HealthComponent = Enemy->GetHealthComponent();
 	if (!HealthComponent) return false;
 	
-	if (HealthComponent->GetHealthPercent() <= 0.8f)
+	if (HealthComponent->GetHealthPercent() <= HealthThreshold)
 	{
 		return true;
 	}

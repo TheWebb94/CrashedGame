@@ -27,14 +27,17 @@ void UBTService_FindNearbyFood::TickNode(UBehaviorTreeComponent& OwnerComp,
 		return;
 
 	TArray<AActor*> Overlaps;
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 	UKismetSystemLibrary::SphereOverlapActors(
 		GetWorld(),
 		Pawn->GetActorLocation(),
 		ScanRadius,
-		TArray<TEnumAsByte<EObjectTypeQuery>>(),
+		ObjectTypes,
 		AFood::StaticClass(),
 		TArray<AActor*>(),
 		Overlaps);
+
 
 	AFood* Closest = nullptr;
 	float ClosestDist = FLT_MAX;

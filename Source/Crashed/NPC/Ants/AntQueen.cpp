@@ -65,6 +65,7 @@ void AAntQueen::CheckAndSpawn()
         // else: not enough food, skip worker spawn this tick
     }
 
+    SpawnInterval = FMath::FRandRange(3.f, 8.f);
 }
 
 void AAntQueen::SpawnAnt(TSubclassOf<AForestAnt> AntClass, TArray<TWeakObjectPtr<AForestAnt>>& TrackingArray)
@@ -142,10 +143,8 @@ void AAntQueen::SpawnReplacementHealer()
     SpawnAnt(HealerAntClass, AliveHealers);
 }
 
-// -----------------------------------------------------------------------
-// Health-phase triggers
-// -----------------------------------------------------------------------
 
+// Health-phase triggers on % thresholds
 void AAntQueen::OnQueenDamaged(float NewHealth, float MaxHealth)
 {
     if (MaxHealth <= 0.f) return;
