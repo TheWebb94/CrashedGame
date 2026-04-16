@@ -37,7 +37,7 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Food")
 	float DespawnDelay = 10.f; // despawn delay will mean ants come back to checek decayed food for a period
-	float decayRate = 0.92f;
+	float decayRate = 0.75f;
 	;
 
 private:

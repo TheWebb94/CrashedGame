@@ -1,10 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
+#include "BTTask_GetPathPoints.h"
 #include "AIController.h"
 #include "Components/SplineComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
-#include "BTTask_GetPathPoints.h"
 #include "Crashed/NPC/BaseEnemy.h"
 #include "Crashed/NPC/PatrolPath.h"
 

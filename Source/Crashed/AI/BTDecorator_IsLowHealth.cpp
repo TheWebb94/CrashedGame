@@ -1,8 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "BTDecorator_IsLowHealth.h"
-
+#include "BehaviorTree/BehaviorTreeComponent.h"
 #include "Crashed/HealthComponent.h"
 #include "Crashed/NPC/BaseEnemy.h"
 #include "Crashed/NPC/EnemyAIController.h"
@@ -10,32 +7,60 @@
 UBTDecorator_IsLowHealth::UBTDecorator_IsLowHealth()
 {
 	NodeName = "IsLowHealth";
-	bCreateNodeInstance = false;
+	bCreateNodeInstance  = true;   // each ant needs its own instance to store the delegate binding
+	bNotifyBecomeRelevant = true;
+	bNotifyCeaseRelevant  = true;
 }
 
-bool UBTDecorator_IsLowHealth::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
+bool UBTDecorator_IsLowHealth::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp,
+														   uint8* NodeMemory) const
 {
-	//check if AIController or Blackboard exist in the AI Character
-	const UBlackboardComponent* MyBlackboard = OwnerComp.GetBlackboardComponent();
 	AAIController* MyController = OwnerComp.GetAIOwner();
-	if (!MyController || !MyBlackboard)
+	if (!MyController)
 		return false;
-	
-	//check if the pawn of the AIController is an instance of BaseEnemy
+
 	ABaseEnemy* Enemy = Cast<ABaseEnemy>(MyController->GetPawn());
 	if (!Enemy)
 		return false;
-	
-	UHealthComponent* HealthComponent = Enemy->GetHealthComponent();
-	if (!HealthComponent) return false;
-	
-	if (HealthComponent->GetHealthPercent() <= HealthThreshold)
-	{
-		return true;
-	}
-	
-	
-	return Super::CalculateRawConditionValue(OwnerComp, NodeMemory);
+
+	UHealthComponent* HC = Enemy->GetHealthComponent();
+	if (!HC)
+		return false;
+
+	return HC->GetHealthPercent() <= HealthThreshold;
 }
 
+void UBTDecorator_IsLowHealth::OnBecomeRelevant(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	Super::OnBecomeRelevant(OwnerComp, NodeMemory);
 
+	AAIController* Controller = OwnerComp.GetAIOwner();
+	if (!Controller) return;
+
+	ABaseEnemy* Enemy = Cast<ABaseEnemy>(Controller->GetPawn());
+	if (!Enemy) return;
+
+	UHealthComponent* HC = Enemy->GetHealthComponent();
+	if (!HC) return;
+
+	CachedOwnerComp  = &OwnerComp;
+	CachedHealthComp = HC;
+	HC->OnHealthChanged.AddDynamic(this, &UBTDecorator_IsLowHealth::OnHealthChanged);
+}
+
+void UBTDecorator_IsLowHealth::OnCeaseRelevant(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	Super::OnCeaseRelevant(OwnerComp, NodeMemory);
+
+	if (CachedHealthComp.IsValid())
+		CachedHealthComp->OnHealthChanged.RemoveDynamic(this, &UBTDecorator_IsLowHealth::OnHealthChanged);
+
+	CachedOwnerComp  = nullptr;
+	CachedHealthComp = nullptr;
+}
+
+void UBTDecorator_IsLowHealth::OnHealthChanged(float NewHealth, float MaxHealth)
+{
+	if (CachedOwnerComp.IsValid())
+		ConditionalFlowAbort(*CachedOwnerComp.Get(), EBTDecoratorAbortRequest::ConditionResultChanged);
+}

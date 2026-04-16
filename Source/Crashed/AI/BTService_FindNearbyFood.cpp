@@ -3,7 +3,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "Crashed/Items/Food.h"
-#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"         
 
 UBTService_FindNearbyFood::UBTService_FindNearbyFood()
 {
@@ -26,32 +26,24 @@ void UBTService_FindNearbyFood::TickNode(UBehaviorTreeComponent& OwnerComp,
 	if (!Pawn)
 		return;
 
-	TArray<AActor*> Overlaps;
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
-	UKismetSystemLibrary::SphereOverlapActors(
-		GetWorld(),
-		Pawn->GetActorLocation(),
-		ScanRadius,
-		ObjectTypes,
-		AFood::StaticClass(),
-		TArray<AActor*>(),
-		Overlaps);
-
+	
+	TArray<AActor*> AllFood;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFood::StaticClass(), AllFood);
 
 	AFood* Closest = nullptr;
-	float ClosestDist = FLT_MAX;
-	for (AActor* Actor : Overlaps)
+	float ClosestDistSq = ScanRadius * ScanRadius;   
+	const FVector PawnLoc = Pawn->GetActorLocation();
+
+	for (AActor* Actor : AllFood)
 	{
 		AFood* Food = Cast<AFood>(Actor);
 		if (!Food || !Food->IsAvailable())
 			continue;
 
-		const float Dist = FVector::DistSquared(Pawn->GetActorLocation(),
-												 Food->GetActorLocation());
-		if (Dist < ClosestDist)
+		const float DistSq = FVector::DistSquared(PawnLoc, Food->GetActorLocation());
+		if (DistSq < ClosestDistSq)
 		{
-			ClosestDist = Dist;
+			ClosestDistSq = DistSq;
 			Closest = Food;
 		}
 	}

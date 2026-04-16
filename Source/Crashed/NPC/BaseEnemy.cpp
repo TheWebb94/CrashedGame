@@ -19,6 +19,8 @@ ABaseEnemy::ABaseEnemy()
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(.0f, 600.f, .0f);
     GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+    GetCharacterMovement()->bUseRVOAvoidance = true; // fixes issuee of ants getting stuck when walking the same path the wrong way in tight corridoors
+    GetCharacterMovement()->AvoidanceConsiderationRadius = 50.f;
 
     BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
     BaseMesh->SetupAttachment(RootComponent);
