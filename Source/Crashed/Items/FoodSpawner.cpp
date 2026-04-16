@@ -28,7 +28,8 @@ void AFoodSpawner::SpawnFood()
 	if (!FoodClass) return;
 
 	const float Angle  = FMath::FRandRange(0.f, 2.f * PI);
-	const float Radius = FMath::FRandRange(0.f, SpawnRadius);
+	
+	const float Radius = FMath::FRandRange(minSpawnRadius, SpawnRadius);
 	const FVector Offset(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, 0.f);
 	const FVector SpawnLocation = GetActorLocation() + Offset;
 

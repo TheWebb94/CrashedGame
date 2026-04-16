@@ -32,6 +32,10 @@ private:
 	// Radius around this actor in which food is randomly placed
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
 	float SpawnRadius = 500.f;
+	
+	// Radius around this actor in which food is randomly placed
+	UPROPERTY(EditAnywhere, Category = "Food Spawner")
+	float minSpawnRadius = 150.f;
 
 	// Maximum food items active at one time
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
