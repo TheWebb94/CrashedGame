@@ -15,7 +15,11 @@ EBTNodeResult::Type UBTTask_GetRandomPatrolPoint::ExecuteTask(UBehaviorTreeCompo
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
 	if (!BB) return EBTNodeResult::Failed;
 	
-	const FVector Home = BB->GetValueAsVector(TEXT("HomeLocation"));
+	FVector Home = BB->GetValueAsVector(TEXT("HomeLocation"));
+		if (Home.IsNearlyZero())
+		if (AAIController* C = OwnerComp.GetAIOwner())
+			if (APawn* P = C->GetPawn())
+				Home = P->GetActorLocation();
 
 	UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
 	FNavLocation NavLoc;

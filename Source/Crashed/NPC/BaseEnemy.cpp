@@ -13,7 +13,6 @@ ABaseEnemy::ABaseEnemy()
 
     // Mesh rotation is driven manually in RotateBase
     bUseControllerRotationYaw = false;
-    bUseControllerRotationYaw = false;
     bUseControllerRotationPitch = false;
     bUseControllerRotationRoll = false;
     GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -37,6 +36,8 @@ void ABaseEnemy::BeginPlay()
     Super::BeginPlay();
 
     GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+    BaseMesh->SetMobility(EComponentMobility::Movable);
+
 
     if (HealthComponent)
     {
@@ -96,3 +97,4 @@ void ABaseEnemy::RotateBase(float DeltaTime)
     const FRotator NewRotation     = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaTime, BaseRotationSpeed);
     BaseMesh->SetWorldRotation(NewRotation);
 }
+
