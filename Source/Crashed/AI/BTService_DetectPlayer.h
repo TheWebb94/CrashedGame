@@ -15,11 +15,15 @@ protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp,
 						  uint8* NodeMemory, float DeltaSeconds) override;
 
-	// Ant starts fleeing when player enters this range
+	//Array of all acotrs the ants should flee from
+	UPROPERTY(EditAnywhere, Category = "Flee")
+	TArray<TSubclassOf<AActor>> ThreatClasses;
+
+	// Ant starts fleeing when a threat enters this range
 	UPROPERTY(EditAnywhere, Category = "Flee")
 	float FleeRadius = 600.f;
 
-	// Ant stops fleeing once player is this far away (must be > FleeRadius)
+	// Ant stops fleeing once all threats are this far away (must be > FleeRadius)
 	UPROPERTY(EditAnywhere, Category = "Flee")
 	float SafeRadius = 1000.f;
 };

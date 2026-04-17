@@ -86,8 +86,8 @@ void AFood::UpdateMesh()
     const float Pct = FoodAmount / InitialFoodAmount;
 
     UStaticMesh* Target = nullptr;
-    if      (Pct > 0.66f) Target = MeshWhole;
-    else if (Pct > 0.33f) Target = MeshSlightlyEaten;
+    if      (Pct > 0.85) Target = MeshWhole;
+    else if (Pct > 0.25) Target = MeshSlightlyEaten;
     else                  Target = MeshMostlyEaten;
 
     if (Target)
