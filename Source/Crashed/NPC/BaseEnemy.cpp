@@ -11,13 +11,12 @@ ABaseEnemy::ABaseEnemy()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    // Mesh rotation is driven manually in RotateBase — same pattern as APlayerCharacter
+    // Mesh rotation is driven manually in RotateBase
     bUseControllerRotationYaw = false;
     bUseControllerRotationYaw = false;
     bUseControllerRotationPitch = false;
     bUseControllerRotationRoll = false;
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(.0f, 600.f, .0f);
+    GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
     GetCharacterMovement()->bUseRVOAvoidance = true; // fixes issuee of ants getting stuck when walking the same path the wrong way in tight corridoors
     GetCharacterMovement()->AvoidanceConsiderationRadius = 50.f;
@@ -71,9 +70,7 @@ void ABaseEnemy::Tick(float DeltaTime)
 
 void ABaseEnemy::PerformAttack_Implementation()
 {
-    // Base no-op. Child classes should either:
-    //   - Call EquippedWeapon->Fire(GetActorLocation(), <target location>)
-    //   - Or get the player and call HealthComponent->ApplyDamage(AttackDamage) directly
+    //child classes ikmplemeent if necessary
 }
 
 void ABaseEnemy::OnDeath_Implementation()
@@ -84,7 +81,17 @@ void ABaseEnemy::OnDeath_Implementation()
 
 void ABaseEnemy::RotateBase(float DeltaTime)
 {
-    const FRotator TargetRotation  = LastMoveDirection.Rotation();
+    FVector TargetDir = LastMoveDirection;
+
+    if (CurrentAttackTarget && GetVelocity().IsNearlyZero())
+    {
+        FVector ToTarget = CurrentAttackTarget->GetActorLocation() - GetActorLocation();
+        ToTarget.Z = 0.f;
+        if (!ToTarget.IsNearlyZero())
+            TargetDir = ToTarget.GetSafeNormal();
+    }
+
+    const FRotator TargetRotation  = TargetDir.Rotation();
     const FRotator CurrentRotation = BaseMesh->GetComponentRotation();
     const FRotator NewRotation     = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaTime, BaseRotationSpeed);
     BaseMesh->SetWorldRotation(NewRotation);

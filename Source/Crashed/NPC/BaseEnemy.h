@@ -84,6 +84,9 @@ public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Enemy|Combat")
     void PerformAttack();
     virtual void PerformAttack_Implementation();
+    
+    UPROPERTY()
+    AActor* CurrentAttackTarget = nullptr;
 
 protected:
     // Bound to HealthComponent->OnDeath in BeginPlay.
