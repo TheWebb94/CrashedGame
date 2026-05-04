@@ -80,6 +80,7 @@ void AEnemyAIController::OnPawnDetected(const TArray<AActor*>& DetectedPawns)
 		if (DetectedPawns[i] == GetWorld()->GetFirstPlayerController()->GetPawn())
 		{
 			DistanceToPlayer = GetPawn()->GetDistanceTo(DetectedPawns[i]);
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, "Detected");
 			BBC->SetValue<UBlackboardKeyType_Bool>("HasLineOfSight", true);
 			BBC->SetValue<UBlackboardKeyType_Object>("TargetActor", DetectedPawns[i]);
 		}

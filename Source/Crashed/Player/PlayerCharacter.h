@@ -70,6 +70,9 @@ protected:
     float TurretRotationSpeed = 15.f;
 
     FVector LastMoveDirection;
+    
+    //TODO: implement an interact behaviour
+    void Interact();
 
     //Combat
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat")
