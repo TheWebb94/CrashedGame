@@ -33,13 +33,12 @@ EBTNodeResult::Type UBTTask_HealAlly::ExecuteTask(UBehaviorTreeComponent& OwnerC
     if (FVector::Dist(Self->GetActorLocation(), Target->GetActorLocation()) > HealRange)
         return EBTNodeResult::Failed;
 
-    // Apply first tick immediately
     Target->HealthComponent->ApplyHealth(HealAmount);
     if (Target->HealthComponent->GetHealthPercent() >= 1.f) { ClearBBKeys(BB); return EBTNodeResult::Succeeded; }
 
     CachedOwnerComp = &OwnerComp;
     const float Interval = (HealRate > 0.f) ? (1.f / HealRate) : 1.f;
-    if (Self) Self->GetWorldTimerManager().SetTimer(HealTimerHandle, this, &UBTTask_HealAlly::DoHealTick, Interval, true);
+    Self->GetWorldTimerManager().SetTimer(HealTimerHandle, this, &UBTTask_HealAlly::DoHealTick, Interval, true);
 
     return EBTNodeResult::InProgress;
 }
@@ -52,11 +51,25 @@ void UBTTask_HealAlly::DoHealTick()
     UBlackboardComponent* BB  = CachedOwnerComp->GetBlackboardComponent();
     if (!Controller || !BB) { CachedOwnerComp = nullptr; return; }
 
+    APawn* Self = Controller->GetPawn();
+
     AForestAnt* Target = Cast<AForestAnt>(BB->GetValueAsObject(TEXT("HealTarget")));
+
+    // Target gone or dead — give up entirely
     if (!IsValid(Target) || !Target->HealthComponent)
     {
         ClearBBKeys(BB);
-        if (APawn* P = Controller->GetPawn()) P->GetWorldTimerManager().ClearTimer(HealTimerHandle);
+        if (Self) Self->GetWorldTimerManager().ClearTimer(HealTimerHandle);
+        FinishLatentTask(*CachedOwnerComp, EBTNodeResult::Failed);
+        CachedOwnerComp = nullptr;
+        return;
+    }
+
+    // Target walked out of range — stop healing, let BT re-run MoveTo to chase them
+    if (Self && FVector::Dist(Self->GetActorLocation(), Target->GetActorLocation()) > HealRange)
+    {
+      
+        Self->GetWorldTimerManager().ClearTimer(HealTimerHandle);
         FinishLatentTask(*CachedOwnerComp, EBTNodeResult::Failed);
         CachedOwnerComp = nullptr;
         return;
@@ -67,7 +80,7 @@ void UBTTask_HealAlly::DoHealTick()
     if (Target->HealthComponent->GetHealthPercent() >= 1.f)
     {
         ClearBBKeys(BB);
-        if (APawn* P = Controller->GetPawn()) P->GetWorldTimerManager().ClearTimer(HealTimerHandle);
+        if (Self) Self->GetWorldTimerManager().ClearTimer(HealTimerHandle);
         FinishLatentTask(*CachedOwnerComp, EBTNodeResult::Succeeded);
         CachedOwnerComp = nullptr;
     }
