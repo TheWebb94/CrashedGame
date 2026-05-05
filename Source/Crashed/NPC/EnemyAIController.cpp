@@ -8,6 +8,7 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Bool.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
+#include "Spider/Spider.h"
 
 
 AEnemyAIController::AEnemyAIController()
@@ -76,15 +77,34 @@ FRotator AEnemyAIController::GetControlRotation() const
 
 void AEnemyAIController::OnPawnDetected(const TArray<AActor*>& DetectedPawns)
 {
+	// Player detection — highest priority
 	for (size_t i = 0; i < DetectedPawns.Num(); i++)
+	{
 		if (DetectedPawns[i] == GetWorld()->GetFirstPlayerController()->GetPawn())
 		{
 			DistanceToPlayer = GetPawn()->GetDistanceTo(DetectedPawns[i]);
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, "Detected");
 			BBC->SetValue<UBlackboardKeyType_Bool>("HasLineOfSight", true);
 			BBC->SetValue<UBlackboardKeyType_Object>("TargetActor", DetectedPawns[i]);
+			if (ABaseEnemy* Me = Cast<ABaseEnemy>(GetPawn()))
+				Me->CurrentAttackTarget = DetectedPawns[i];
+			return;
 		}
+	}
 
+	// Spider detection — secondary, only reached if player not found above
+	for (size_t i = 0; i < DetectedPawns.Num(); i++)
+	{
+		if (Cast<ASpider>(DetectedPawns[i]))
+		{
+			BBC->SetValue<UBlackboardKeyType_Bool>("HasLineOfSight", true);
+			BBC->SetValue<UBlackboardKeyType_Object>("TargetActor", DetectedPawns[i]);
+			if (ABaseEnemy* Me = Cast<ABaseEnemy>(GetPawn()))
+				Me->CurrentAttackTarget = DetectedPawns[i];
+			break;
+		}
+	}
 }
+
 
 

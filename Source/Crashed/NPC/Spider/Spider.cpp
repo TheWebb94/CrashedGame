@@ -4,6 +4,7 @@
 #include "DefensiveWeb.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Crashed/HealthComponent.h"
 
 ASpider::ASpider()
 {
@@ -23,6 +24,13 @@ void ASpider::Tick(float DeltaTime)
 void ASpider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+void ASpider::PerformAttack_Implementation()
+{
+	if (!CurrentAttackTarget) return;
+	if (UHealthComponent* HC = CurrentAttackTarget->FindComponentByClass<UHealthComponent>())
+		HC->ApplyDamage(AttackDamage);
 }
 
 void ASpider::ShootWebProjectile(AActor* Target)

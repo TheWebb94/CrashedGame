@@ -102,12 +102,14 @@ void AForestAnt::PerformAttack_Implementation()
 {
     if (AntType == EAntType::Healer) return;
 
-    APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-    if (!Player) return;
+    AActor* Target = CurrentAttackTarget;
+    if (!Target)
+        Target = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+    if (!Target) return;
 
-    if (FVector::DistSquared(GetActorLocation(), Player->GetActorLocation())
+    if (FVector::DistSquared(GetActorLocation(), Target->GetActorLocation())
             > AttackRange * AttackRange) return;
 
-    if (UHealthComponent* HC = Player->FindComponentByClass<UHealthComponent>())
+    if (UHealthComponent* HC = Target->FindComponentByClass<UHealthComponent>())
         HC->ApplyDamage(AttackDamage);
 }

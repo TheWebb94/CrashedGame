@@ -181,7 +181,9 @@ void ASpiderAIController::EvaluateAndExecute()
 
     // --- Utility scores ---
 
+    // Reduce patrol when a target exists — don't wander while something is in range
     float PatrolScore = (1.f - Risk) * 0.5f + HealthNorm * 0.3f;
+    if (Target) PatrolScore *= 0.1f;
 
     // Suppress ranged if target is already entangled — no point wasting a web
     float RangedScore = 0.f;
@@ -194,11 +196,19 @@ void ASpiderAIController::EvaluateAndExecute()
         RangedScore = FMath::Max(0.f, DistFactor) * (1.f - Risk * 0.3f);
     }
 
-    // Boost melee if target is entangled — close in and capitalise
+    // Melee: scores positively across the full scan radius so the spider always
+    // closes in on a target. Peaks once within actual attack range.
+    const float EffectiveMeleeRange = Spider->AttackRange;
     float MeleeScore = 0.f;
-    if (Target && DistToTarget < MeleeRange)
+    if (Target)
     {
-        float BaseScore = FMath::Max(0.f, 1.f - DistToTarget / MeleeRange) * HealthNorm;
+        // Approach factor — grows as spider closes from ThreatScanRadius to 0
+        float ApproachFactor = 1.f - FMath::Clamp(DistToTarget / ThreatScanRadius, 0.f, 1.f);
+        // Melee factor — stronger once within actual attack range
+        float MeleeFactor = DistToTarget < EffectiveMeleeRange
+            ? 1.f - DistToTarget / EffectiveMeleeRange
+            : 0.f;
+        float BaseScore = FMath::Max(ApproachFactor, MeleeFactor) * HealthNorm;
         MeleeScore = bTargetEntangled ? FMath::Min(BaseScore * 2.5f, 1.f) : BaseScore;
     }
 

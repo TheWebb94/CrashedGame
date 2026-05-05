@@ -40,6 +40,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void PerformAttack_Implementation() override; 
+	
 
 public:
 	virtual void Tick(float DeltaTime) override;
