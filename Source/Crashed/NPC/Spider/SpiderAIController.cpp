@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
 #include "Crashed/HealthComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ASpiderAIController::ASpiderAIController()
 {
@@ -90,16 +91,44 @@ AActor* ASpiderAIController::FindBestTarget() const
 
     const FVector Origin = MyPawn->GetActorLocation();
 
+    // Gather all candidates within scan radius
+    TArray<ACharacter*> Candidates;
+
     APlayerCharacter* Player = Cast<APlayerCharacter>(
         UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     if (Player && FVector::Dist(Origin, Player->GetActorLocation()) <= ThreatScanRadius)
-        return Player;
+        Candidates.Add(Player);
 
-    // Nearest ant
     TArray<AActor*> FoundAnts;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AForestAnt::StaticClass(), FoundAnts);
+    for (AActor* A : FoundAnts)
+    {
+        ACharacter* Char = Cast<ACharacter>(A);
+        if (Char && FVector::Dist(Origin, Char->GetActorLocation()) <= ThreatScanRadius)
+            Candidates.Add(Char);
+    }
+
+    // Priority 1: nearest entangled target
+    ACharacter* NearestEntangled = nullptr;
+    float NearestEntangledDist = FLT_MAX;
+    for (ACharacter* C : Candidates)
+    {
+        UCharacterMovementComponent* Move = C->GetCharacterMovement();
+        if (Move && Move->MaxWalkSpeed <= 0.f)
+        {
+            float D = FVector::Dist(Origin, C->GetActorLocation());
+            if (D < NearestEntangledDist) { NearestEntangledDist = D; NearestEntangled = C; }
+        }
+    }
+    if (NearestEntangled) return NearestEntangled;
+
+    // Priority 2: player
+    if (Player && FVector::Dist(Origin, Player->GetActorLocation()) <= ThreatScanRadius)
+        return Player;
+
+    // Priority 3: nearest ant
     AActor* Nearest = nullptr;
-    float   NearestDist = ThreatScanRadius;
+    float NearestDist = ThreatScanRadius;
     for (AActor* A : FoundAnts)
     {
         float D = FVector::Dist(Origin, A->GetActorLocation());
@@ -141,30 +170,41 @@ void ASpiderAIController::EvaluateAndExecute()
         ? FVector::Dist(Spider->GetActorLocation(), Target->GetActorLocation())
         : ThreatScanRadius;
 
-    // --- Utility scores (0-1 range, normalised) ---
+    // Check if the chosen target is currently entangled
+    bool bTargetEntangled = false;
+    if (Target)
+    {
+        ACharacter* TargetChar = Cast<ACharacter>(Target);
+        if (TargetChar && TargetChar->GetCharacterMovement())
+            bTargetEntangled = TargetChar->GetCharacterMovement()->MaxWalkSpeed <= 0.f;
+    }
 
-    // Patrol: easy/safe situations
+    // --- Utility scores ---
+
     float PatrolScore = (1.f - Risk) * 0.5f + HealthNorm * 0.3f;
 
-    // Ranged: bell-curve peaking at OptimalRangedDistance
+    // Suppress ranged if target is already entangled — no point wasting a web
     float RangedScore = 0.f;
     if (Target && Spider->bCanRangedAttack
         && DistToTarget >= MinRangedDistance
-        && DistToTarget <= MaxRangedDistance)
+        && DistToTarget <= MaxRangedDistance
+        && !bTargetEntangled)
     {
         float DistFactor = 1.f - FMath::Abs(DistToTarget - OptimalRangedDistance) / MaxRangedDistance;
         RangedScore = FMath::Max(0.f, DistFactor) * (1.f - Risk * 0.3f);
     }
 
-    // Melee: strong up close, drops to 0 at MeleeRange
+    // Boost melee if target is entangled — close in and capitalise
     float MeleeScore = 0.f;
     if (Target && DistToTarget < MeleeRange)
-        MeleeScore = FMath::Max(0.f, 1.f - DistToTarget / MeleeRange) * HealthNorm;
+    {
+        float BaseScore = FMath::Max(0.f, 1.f - DistToTarget / MeleeRange) * HealthNorm;
+        MeleeScore = bTargetEntangled ? FMath::Min(BaseScore * 2.5f, 1.f) : BaseScore;
+    }
 
-    // Retreat: high risk or low health
     float RetreatScore = Risk * 0.6f + (1.f - HealthNorm) * 0.4f;
 
-    // --- Apply weights (coefficients from slides) ---
+    // --- Apply weights ---
     float WPatrol  = PatrolScore  * PatrolWeight;
     float WRanged  = RangedScore  * RangedWeight;
     float WMelee   = MeleeScore   * MeleeWeight;
@@ -175,9 +215,8 @@ void ASpiderAIController::EvaluateAndExecute()
     float Best = WPatrol;
     if (WRanged  > Best) { Best = WRanged;  NewState = ESpiderState::RangedAttack; }
     if (WMelee   > Best) { Best = WMelee;   NewState = ESpiderState::MeleeAttack;  }
-    if (WRetreat > Best) { Best = WRetreat; NewState = ESpiderState::Retreat;       }
+    if (WRetreat > Best) { Best = WRetreat; NewState = ESpiderState::Retreat;      }
 
-    // Reset retreat-web flag when leaving retreat state
     if (NewState != ESpiderState::Retreat)
         bWebPlacedThisRetreat = false;
 
@@ -194,7 +233,6 @@ void ASpiderAIController::EvaluateAndExecute()
     case ESpiderState::RangedAttack:
         if (Target)
         {
-            // Position at optimal range
             if (DistToTarget > OptimalRangedDistance + 100.f)
                 MoveToActor(Target, OptimalRangedDistance);
             else

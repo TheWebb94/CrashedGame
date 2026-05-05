@@ -12,7 +12,9 @@ ASpiderWebProjectile::ASpiderWebProjectile()
     CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
     CollisionSphere->InitSphereRadius(20.f);
     CollisionSphere->SetCollisionProfileName(TEXT("Projectile"));
-    CollisionSphere->SetNotifyRigidBodyCollision(true);
+    CollisionSphere->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+    CollisionSphere->SetGenerateOverlapEvents(true);
+
     RootComponent = CollisionSphere;
 
     WebMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WebMesh"));
@@ -31,11 +33,12 @@ ASpiderWebProjectile::ASpiderWebProjectile()
 void ASpiderWebProjectile::BeginPlay()
 {
     Super::BeginPlay();
-    CollisionSphere->OnComponentHit.AddDynamic(this, &ASpiderWebProjectile::OnHit);
+    CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &ASpiderWebProjectile::OnOverlap);
 }
 
-void ASpiderWebProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-    UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+void ASpiderWebProjectile::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+    UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex,
+    bool bFromSweep, const FHitResult& SweepResult)
 {
     if (OtherActor && OtherActor != GetOwner())
     {
@@ -46,6 +49,9 @@ void ASpiderWebProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Othe
 
 void ASpiderWebProjectile::EntangleTarget(AActor* Target)
 {
+    
+    if (Target == GetOwner()) return; //prevents self entangle
+        
     ACharacter* Char = Cast<ACharacter>(Target);
     if (!Char) return;
 
