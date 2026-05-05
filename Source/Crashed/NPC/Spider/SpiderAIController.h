@@ -1,43 +1,86 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "SpiderAIController.generated.h"
 
+class UAISenseConfig_Sight;
+
+UENUM()
+enum class ESpiderState : uint8
+{
+    Patrol,
+    RangedAttack,
+    MeleeAttack,
+    Retreat
+};
+
 UCLASS()
 class CRASHED_API ASpiderAIController : public AAIController
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
-	ASpiderAIController();
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float AISightRadius = 1000.f;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float AISightAge = 5.f;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float AILoseSightRadius = AISightRadius + 50.f;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float AIFieldOfView = 130.f;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	class UAISenseConfig_Sight* SightConfig;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	bool bIsPlayerDetected = false;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float DistanceToOther = 0.0f;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float AttackRange = 200.0f;
+    ASpiderAIController();
 
+    // --- Perception ---
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "AI|Perception")
+    float AISightRadius = 1000.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "AI|Perception")
+    float AISightAge = 5.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "AI|Perception")
+    float AILoseSightRadius = 1050.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "AI|Perception")
+    float AIFieldOfView = 130.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "AI|Perception")
+    UAISenseConfig_Sight* SightConfig;
 
-	virtual void BeginPlay() override;
-	virtual void OnPossess(APawn* MyPawn) override;
-	virtual void Tick(float DeltaSeconds) override;
-	virtual FRotator GetControlRotation() const override;
-	UFUNCTION()
-	void OnPawnDetected(const TArray<AActor*>& DetectedPawns);
-	
+    // --- Utility AI tuning ---
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility")
+    float ThreatScanRadius = 1200.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility")
+    float OptimalRangedDistance = 600.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility")
+    float MinRangedDistance = 300.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility")
+    float MaxRangedDistance = 1000.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility")
+    float MeleeRange = 250.f;
+
+    // Weights (coefficients from the slides — higher = more dominant)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility|Weights")
+    float PatrolWeight  = 1.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility|Weights")
+    float RangedWeight  = 2.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility|Weights")
+    float MeleeWeight   = 1.5f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility|Weights")
+    float RetreatWeight = 1.5f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility")
+    float DecisionInterval = 0.25f;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI|State")
+    ESpiderState CurrentState = ESpiderState::Patrol;
+
+protected:
+    virtual void BeginPlay() override;
+    virtual void OnPossess(APawn* MyPawn) override;
+    virtual FRotator GetControlRotation() const override;
+
+private:
+    // Re-evaluates utility scores and executes the winning action
+    void EvaluateAndExecute();
+
+    float CalculateRiskScore() const;
+    AActor* FindBestTarget() const;
+
+    // Flee-point calculation for retreat
+    FVector CalcFleeDestination(const FVector& ThreatOrigin) const;
+
+    // Tracks whether a defensive web was already placed this retreat phase
+    bool bWebPlacedThisRetreat = false;
+
+    FTimerHandle DecisionTimerHandle;
 };

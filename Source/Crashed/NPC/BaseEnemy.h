@@ -45,7 +45,7 @@ public:
     float DetectionRadius = 1500.f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")
-    float AttackRange = 600.f;
+    float AttackRange = 150.f;
 
     // Used when dealing damage directly without a weapon actor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")

@@ -1,10 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Crashed/NPC/BaseEnemy.h"
 #include "Spider.generated.h"
+
+class AWaypoint;
+class ASpiderWebProjectile;
+class ADefensiveWeb;
 
 UCLASS()
 class CRASHED_API ASpider : public ABaseEnemy
@@ -12,19 +14,37 @@ class CRASHED_API ASpider : public ABaseEnemy
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ASpider();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class AWaypoint* NextWayPoint;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spider|Patrol")
+	AWaypoint* NextWayPoint;
+
+	// Blueprint should assign these to the matching child classes
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spider|Combat")
+	TSubclassOf<ASpiderWebProjectile> WebProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spider|Combat")
+	TSubclassOf<ADefensiveWeb> DefensiveWebClass;
+
+	// Seconds between ranged web shots
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spider|Combat")
+	float RangedAttackCooldown = 3.0f;
+
+	bool bCanRangedAttack = true;
+
+	// Fire a web projectile aimed at Target
+	void ShootWebProjectile(AActor* Target);
+
+	// Drop a defensive web trap at the spider's current feet position
+	void PlaceDefensiveWeb();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+private:
+	FTimerHandle RangedCooldownTimer;
 };
