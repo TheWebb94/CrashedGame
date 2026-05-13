@@ -1,10 +1,13 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "BeeHive.generated.h"
+
+class ABee;
+class UHealthComponent;
+class UStaticMeshComponent;
+class ABaseEnemy;
 
 UCLASS()
 class CRASHED_API ABeeHive : public AActor
@@ -12,14 +15,47 @@ class CRASHED_API ABeeHive : public AActor
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
 	ABeeHive();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* HiveMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UHealthComponent* HealthComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "BeeHive")
+	TSubclassOf<ABee> BeeClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "BeeHive")
+	int32 MaxBees = 12;
+
+	UPROPERTY(EditDefaultsOnly, Category = "BeeHive")
+	float BeeRespawnDelay = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "BeeHive")
+	float SpawnRadius = 300.f;
+
+	// How long bees stay in defend mode after a hive attack before returning to swarm
+	UPROPERTY(EditDefaultsOnly, Category = "BeeHive")
+	float DefendDuration = 15.f;
+
+private:
+	TArray<TWeakObjectPtr<ABee>> AliveBees;
+	int32 PendingRespawns = 0;
+	FTimerHandle DefendResetTimerHandle;
+
+	void SpawnBee();
+	void TryRespawnBee();
+	void SendBeesToAttack(AActor* Target);
+	void ResetDefendState();
+
+	UFUNCTION()
+	void OnHiveDamaged(float NewHealth, float MaxHealth);
+
+	UFUNCTION()
+	void OnBeeDied(ABaseEnemy* DeadBee);
 };

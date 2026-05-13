@@ -15,6 +15,16 @@ class CRASHED_API AFoodSpawner : public AActor
 public:
 	AFoodSpawner();
 
+	// Called by a bee to mark this spawner as pollinated
+	UFUNCTION(BlueprintCallable, Category = "Food Spawner|Pollination")
+	void Pollinate();
+
+	UFUNCTION(BlueprintPure, Category = "Food Spawner|Pollination")
+	bool IsPollinated() const { return bIsPollinated; }
+
+	UFUNCTION(BlueprintPure, Category = "Food Spawner|Pollination")
+	bool RequiresPollination() const { return bRequiresPollination; }
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -25,25 +35,28 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UBillboardComponent* Marker;
 
-	// Blueprint subclass of AFood to spawn (assign BP_Food in editor)
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
 	TSubclassOf<AFood> FoodClass;
 
-	// Radius around this actor in which food is randomly placed
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
 	float SpawnRadius = 500.f;
-	
-	// Radius around this actor in which food is randomly placed
+
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
 	float minSpawnRadius = 150.f;
 
-	// Maximum food items active at one time
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
 	int32 MaxFoodCount = 5;
 
-	// Seconds between replenishment checks
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
 	float SpawnInterval = 15.f;
+
+	// If true, bIsPollinated must be true before RefreshFood will spawn food
+	UPROPERTY(EditAnywhere, Category = "Food Spawner|Pollination")
+	bool bRequiresPollination = true;
+
+	// Consumed (set false) after one replenishment cycle
+	UPROPERTY(VisibleAnywhere, Category = "Food Spawner|Pollination")
+	bool bIsPollinated = false;
 
 	TArray<TWeakObjectPtr<AFood>> ActiveFood;
 	FTimerHandle SpawnTimerHandle;

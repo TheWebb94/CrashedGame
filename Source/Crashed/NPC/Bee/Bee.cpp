@@ -1,32 +1,35 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Bee.h"
+#include "BeeAIController.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Crashed/HealthComponent.h"
 
-
-// Sets default values
 ABee::ABee()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	AIControllerClass = ABeeAIController::StaticClass();
+
+	GetCharacterMovement()->DefaultLandMovementMode  = MOVE_Flying;
+	GetCharacterMovement()->DefaultWaterMovementMode = MOVE_Flying;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	MoveSpeed     = 450.f;
+	AttackRange   = 80.f;
+	AttackDamage  = 5.f;
+	AttackRate    = 2.f;
+	DetectionRadius = 800.f;
 }
 
-// Called when the game starts or when spawned
 void ABee::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 }
 
-// Called every frame
-void ABee::Tick(float DeltaTime)
+void ABee::PerformAttack_Implementation()
 {
-	Super::Tick(DeltaTime);
-}
+	if (!CurrentAttackTarget) return;
+	if (FVector::DistSquared(GetActorLocation(), CurrentAttackTarget->GetActorLocation())
+			> AttackRange * AttackRange) return;
 
-// Called to bind functionality to input
-void ABee::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	if (UHealthComponent* HC = CurrentAttackTarget->FindComponentByClass<UHealthComponent>())
+		HC->ApplyDamage(AttackDamage);
 }
-

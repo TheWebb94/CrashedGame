@@ -6,7 +6,6 @@
 AFoodSpawner::AFoodSpawner()
 {
 	PrimaryActorTick.bCanEverTick = false;
-
 	Marker = CreateDefaultSubobject<UBillboardComponent>(TEXT("Marker"));
 	RootComponent = Marker;
 }
@@ -15,12 +14,18 @@ void AFoodSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	int spawnDeficit = 2;
-	
-	for (int32 i = 0; i < MaxFoodCount - spawnDeficit; ++i) // dont spawn all food immediately, alllowing for spawn space at runtime
+	// Spawn initial food — bypass pollination for startup stock
+	const int32 spawnDeficit = 2;
+	for (int32 i = 0; i < MaxFoodCount - spawnDeficit; ++i)
 		SpawnFood();
 
-	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &AFoodSpawner::RefreshFood, SpawnInterval, true);
+	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this,
+		&AFoodSpawner::RefreshFood, SpawnInterval, true);
+}
+
+void AFoodSpawner::Pollinate()
+{
+	bIsPollinated = true;
 }
 
 void AFoodSpawner::SpawnFood()
@@ -28,15 +33,15 @@ void AFoodSpawner::SpawnFood()
 	if (!FoodClass) return;
 
 	const float Angle  = FMath::FRandRange(0.f, 2.f * PI);
-	
 	const float Radius = FMath::FRandRange(minSpawnRadius, SpawnRadius);
 	const FVector Offset(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, 0.f);
-	const FVector SpawnLocation = GetActorLocation() + Offset;
 
 	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	Params.SpawnCollisionHandlingOverride =
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	AFood* NewFood = GetWorld()->SpawnActor<AFood>(FoodClass, SpawnLocation, FRotator::ZeroRotator, Params);
+	AFood* NewFood = GetWorld()->SpawnActor<AFood>(FoodClass,
+		GetActorLocation() + Offset, FRotator::ZeroRotator, Params);
 	if (NewFood)
 		ActiveFood.Add(NewFood);
 }
@@ -49,6 +54,14 @@ void AFoodSpawner::RefreshFood()
 	});
 
 	const int32 Deficit = MaxFoodCount - ActiveFood.Num();
+	if (Deficit <= 0) return;
+
+	if (bRequiresPollination)
+	{
+		if (!bIsPollinated) return;
+		bIsPollinated = false; // one pollination → one replenishment cycle
+	}
+
 	for (int32 i = 0; i < Deficit; ++i)
 		SpawnFood();
 }

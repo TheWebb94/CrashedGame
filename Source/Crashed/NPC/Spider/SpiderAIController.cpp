@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
 #include "Crashed/HealthComponent.h"
+#include "Crashed/NPC/Ants/AntQueen.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 ASpiderAIController::ASpiderAIController()
@@ -78,12 +79,21 @@ float ASpiderAIController::CalculateRiskScore() const
 
         Risk += (Ant->AntType == EAntType::Soldier) ? 0.3f : 0.1f;
     }
-
+    
+    //if Queen is nearby
+    TArray<AActor*> FoundQueens;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAntQueen::StaticClass(), FoundQueens);
+    for (AActor* A : FoundQueens)
+    {
+        if (FVector::Dist(Origin, A->GetActorLocation()) <= ThreatScanRadius)
+            Risk += 0.3f;
+    }
     return FMath::Clamp(Risk, 0.f, 1.f);
 }
 
 
-// Best attack target: player first, then nearest ForestAnt
+
+// Best attack target: player > AntQueen > nearest ForestAnt
 AActor* ASpiderAIController::FindBestTarget() const
 {
     APawn* MyPawn = GetPawn();
@@ -91,7 +101,6 @@ AActor* ASpiderAIController::FindBestTarget() const
 
     const FVector Origin = MyPawn->GetActorLocation();
 
-    // Gather all candidates within scan radius
     TArray<ACharacter*> Candidates;
 
     APlayerCharacter* Player = Cast<APlayerCharacter>(
@@ -102,6 +111,15 @@ AActor* ASpiderAIController::FindBestTarget() const
     TArray<AActor*> FoundAnts;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AForestAnt::StaticClass(), FoundAnts);
     for (AActor* A : FoundAnts)
+    {
+        ACharacter* Char = Cast<ACharacter>(A);
+        if (Char && FVector::Dist(Origin, Char->GetActorLocation()) <= ThreatScanRadius)
+            Candidates.Add(Char);
+    }
+
+    TArray<AActor*> FoundQueens;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAntQueen::StaticClass(), FoundQueens);
+    for (AActor* A : FoundQueens)
     {
         ACharacter* Char = Cast<ACharacter>(A);
         if (Char && FVector::Dist(Origin, Char->GetActorLocation()) <= ThreatScanRadius)
@@ -126,7 +144,17 @@ AActor* ASpiderAIController::FindBestTarget() const
     if (Player && FVector::Dist(Origin, Player->GetActorLocation()) <= ThreatScanRadius)
         return Player;
 
-    // Priority 3: nearest ant
+    // Priority 3: AntQueen (high-value target)
+    AActor* NearestQueen = nullptr;
+    float NearestQueenDist = ThreatScanRadius;
+    for (AActor* A : FoundQueens)
+    {
+        float D = FVector::Dist(Origin, A->GetActorLocation());
+        if (D < NearestQueenDist) { NearestQueenDist = D; NearestQueen = A; }
+    }
+    if (NearestQueen) return NearestQueen;
+
+    // Priority 4: nearest ForestAnt
     AActor* Nearest = nullptr;
     float NearestDist = ThreatScanRadius;
     for (AActor* A : FoundAnts)

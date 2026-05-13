@@ -1,28 +1,52 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Crashed/NPC/BaseEnemy.h"
 #include "Bee.generated.h"
 
-UCLASS()
+class AFoodSpawner;
+class ABeeHive;
+
+UCLASS(Abstract)
 class CRASHED_API ABee : public ABaseEnemy
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ABee();
 
+	UPROPERTY(BlueprintReadOnly, Category = "Bee")
+	TWeakObjectPtr<ABeeHive> OwnerHive;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Bee|Combat")
+	bool bIsDefending = false;
+
+	// Per-bee cooldown map: FoodSpawner → world time when cooldown expires
+	TMap<TWeakObjectPtr<AFoodSpawner>, float> PollinationCooldowns;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
+	float FlockingRadius = 400.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
+	float SeparationWeight = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
+	float CohesionWeight = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
+	float AlignmentWeight = 0.8f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
+	float DesiredSeparation = 60.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Pollination")
+	float PollinationScanRadius = 3000.f;
+
+	// Seconds before this bee can re-pollinate the same spawner
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Pollination")
+	float PollinationCooldown = 300.f;
+
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void PerformAttack_Implementation() override;
 };
