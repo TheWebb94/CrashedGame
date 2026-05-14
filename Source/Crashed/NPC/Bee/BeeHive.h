@@ -43,7 +43,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "BeeHive")
 	float DefendDuration = 15.f;
 
+	ABee* GetSwarmMaster() const { return SwarmMaster.IsValid() ? SwarmMaster.Get() : nullptr; }
+
 private:
+	
+	TWeakObjectPtr<ABee> SwarmMaster;
+	
 	TArray<TWeakObjectPtr<ABee>> AliveBees;
 	int32 PendingRespawns = 0;
 	FTimerHandle DefendResetTimerHandle;
@@ -52,7 +57,8 @@ private:
 	void TryRespawnBee();
 	void SendBeesToAttack(AActor* Target);
 	void ResetDefendState();
-
+	void PromoteSwarmMaster();
+	
 	UFUNCTION()
 	void OnHiveDamaged(float NewHealth, float MaxHealth);
 

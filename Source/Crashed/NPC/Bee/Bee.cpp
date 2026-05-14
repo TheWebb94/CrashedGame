@@ -29,4 +29,6 @@ void ABee::PerformAttack_Implementation()
 
 	if (UHealthComponent* HC = CurrentAttackTarget->FindComponentByClass<UHealthComponent>())
 		HC->ApplyDamage(AttackDamage);
+	
+	HealthComponent->ApplyDamage(HealthComponent->currentHealth); //kill self
 }

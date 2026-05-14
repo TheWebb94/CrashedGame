@@ -21,6 +21,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Bee|Combat")
 	bool bIsDefending = false;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Bee")
+	bool bIsSwarmMaster = false;
+	
 	// Per-bee cooldown map: FoodSpawner → world time when cooldown expires
 	TMap<TWeakObjectPtr<AFoodSpawner>, float> PollinationCooldowns;
 
@@ -37,7 +40,7 @@ public:
 	float AlignmentWeight = 0.8f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
-	float DesiredSeparation = 60.f;
+	float DesiredSeparation = 150.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
 	float WanderRadius = 1500.f;

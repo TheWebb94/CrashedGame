@@ -1,6 +1,7 @@
 #include "EnemyAIController.h"
 
 #include "BaseEnemy.h"
+#include "Bee/Bee.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
@@ -55,15 +56,18 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 	}
 }
 
+// Replace the Tick function (lines 58–67)
 void AEnemyAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	if (DistanceToPlayer > AISightRadius)
 	{
+		if (ABee* Bee = Cast<ABee>(GetPawn()))
+			if (Bee->bIsDefending) return;
+
 		BBC->SetValue<UBlackboardKeyType_Bool>("HasLineOfSight", false);
 		BBC->ClearValue("TargetActor");
 	}
-
 }
 
 FRotator AEnemyAIController::GetControlRotation() const

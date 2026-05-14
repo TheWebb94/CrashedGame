@@ -27,6 +27,21 @@ void ABeeHive::BeginPlay()
         SpawnBee();
 }
 
+void ABeeHive::PromoteSwarmMaster()
+{
+    if (SwarmMaster.IsValid()) return;
+
+    for (auto& BeePtr : AliveBees)
+    {
+        if (BeePtr.IsValid())
+        {
+            SwarmMaster = BeePtr;
+            BeePtr->bIsSwarmMaster = true;
+            return;
+        }
+    }
+}
+
 void ABeeHive::SpawnBee()
 {
     if (!BeeClass) return;
@@ -51,6 +66,25 @@ void ABeeHive::SpawnBee()
     NewBee->OwnerHive = this;
     NewBee->OnEnemyDeath.AddDynamic(this, &ABeeHive::OnBeeDied);
     AliveBees.Add(NewBee);
+    
+    // Inherit defend state from swarm master if a fight is already in progress
+    if (SwarmMaster.IsValid() && SwarmMaster->bIsDefending && SwarmMaster->CurrentAttackTarget)
+    {
+        NewBee->bIsDefending = true;
+        NewBee->CurrentAttackTarget = SwarmMaster->CurrentAttackTarget;
+
+        if (ABeeAIController* AIC = Cast<ABeeAIController>(NewBee->GetController()))
+        {
+            if (AIC->BBC)
+            {
+                AIC->BBC->SetValueAsObject(TEXT("TargetActor"), SwarmMaster->CurrentAttackTarget);
+                AIC->BBC->SetValueAsBool(TEXT("IsDefending"), true);
+                AIC->BBC->SetValueAsBool(TEXT("HasLineOfSight"), true);
+            }
+        }
+    }
+    
+    PromoteSwarmMaster();
 }
 
 void ABeeHive::OnHiveDamaged(float NewHealth, float MaxHealth)
