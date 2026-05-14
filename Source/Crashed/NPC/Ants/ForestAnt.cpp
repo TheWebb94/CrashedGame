@@ -70,10 +70,14 @@ void AForestAnt::SetDefendHive(bool bDefend)
 
 void AForestAnt::SetAttackTarget(AActor* Target)
 {
+    CurrentAttackTarget = Target;
     if (AEnemyAIController* AIC = Cast<AEnemyAIController>(GetController()))
     {
         if (AIC->BBC)
+        {
             AIC->BBC->SetValueAsObject(TEXT("TargetActor"), Target);
+            AIC->BBC->SetValueAsBool(TEXT("HasLineOfSight"), true);
+        }
     }
 }
 

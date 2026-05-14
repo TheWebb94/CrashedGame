@@ -4,13 +4,13 @@
 #include "Crashed/NPC/Bee/Bee.h"
 #include "Crashed/NPC/Bee/BeeHive.h"
 #include "Kismet/GameplayStatics.h"
-
+#include "GameFramework/CharacterMovementComponent.h"
 
 UBTService_BeeFlocking::UBTService_BeeFlocking()
 {
     NodeName = TEXT("BeeFlocking");
-    Interval = 0.1f;
-    RandomDeviation = 0.02f;
+    Interval = 0.05f;
+    RandomDeviation = 0.01f;
 }
 
 void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
@@ -34,14 +34,19 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
         if (BB->GetValueAsBool(TEXT("HasPollinateTarget"))) return;
 
         const float Now = GetWorld()->GetTimeSeconds();
+        const float DistToTarget = FVector::Dist(SelfLoc, Self->WanderTarget);
         if (Self->WanderTarget.IsZero() ||
+            DistToTarget < 200.f ||
             (Now - Self->LastWanderUpdate) >= Self->WanderUpdateInterval)
         {
-            const float Angle = FMath::FRandRange(0.f, 2.f * PI);
-            const float Dist  = FMath::FRandRange(300.f, Self->WanderRadius * 0.5f);
-            Self->WanderTarget = SelfLoc + FVector(
-                FMath::Cos(Angle) * Dist, FMath::Sin(Angle) * Dist, 0.f);
-            Self->LastWanderUpdate = Now;
+            const FVector Forward     = Self->GetActorForwardVector();
+            const float   ForwardBias = FMath::FRandRange(-60.f, 60.f); // degrees
+            const float   Yaw         = FMath::Atan2(Forward.Y, Forward.X)
+                                        + FMath::DegreesToRadians(ForwardBias);
+            const float   Dist        = FMath::FRandRange(400.f, Self->WanderRadius * 0.5f);
+            Self->WanderTarget        = SelfLoc + FVector(FMath::Cos(Yaw) * Dist,
+                                                           FMath::Sin(Yaw) * Dist, 0.f);
+            Self->LastWanderUpdate    = Now;
         }
         BB->SetValueAsVector(TEXT("TargetLocation"), Self->WanderTarget);
         return;
@@ -52,9 +57,14 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
     {
         if (ABee* Master = Self->OwnerHive->GetSwarmMaster())
         {
-            const FVector ToSelf = (SelfLoc - Master->GetActorLocation()).GetSafeNormal();
-            const FVector GatherPoint = Master->GetActorLocation() + ToSelf * Self->DesiredSeparation * 2.f;
+            const FVector ToSelf      = (SelfLoc - Master->GetActorLocation()).GetSafeNormal();
+            const FVector GatherPoint = Master->GetActorLocation() + ToSelf * (Self->DesiredSeparation * 3.f);
             BB->SetValueAsVector(TEXT("TargetLocation"), GatherPoint);
+
+            const float DistToGather = FVector::Dist(SelfLoc, GatherPoint);
+            const float Alpha        = FMath::Clamp((DistToGather - 150.f) / 600.f, 0.f, 1.f);
+            Self->GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(Self->MoveSpeed, Self->MoveSpeed * 2.5f, Alpha);
+
             return;
         }
     }

@@ -23,7 +23,7 @@ void UBTService_FindUnpollinatedSpawner::TickNode(UBehaviorTreeComponent& OwnerC
     if (!Controller || !BB) return;
 
     ABee* Bee = Cast<ABee>(Controller->GetPawn());
-    if (!Bee || Bee->bIsDefending) return;
+    if (!Bee || Bee->bIsDefending || !Bee->bIsSwarmMaster) return;
 
     const FVector BeeLocation = Bee->GetActorLocation();
     const float   CurrentTime = GetWorld()->GetTimeSeconds();

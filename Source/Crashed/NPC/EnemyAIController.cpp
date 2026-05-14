@@ -56,7 +56,6 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 	}
 }
 
-// Replace the Tick function (lines 58–67)
 void AEnemyAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -64,6 +63,12 @@ void AEnemyAIController::Tick(float DeltaSeconds)
 	{
 		if (ABee* Bee = Cast<ABee>(GetPawn()))
 			if (Bee->bIsDefending) return;
+
+		// Don't wipe an explicitly assigned non-player target (e.g. spider)
+		APawn* Player = GetWorld()->GetFirstPlayerController()
+			? GetWorld()->GetFirstPlayerController()->GetPawn() : nullptr;
+		if (ABaseEnemy* Me = Cast<ABaseEnemy>(GetPawn()))
+			if (Me->CurrentAttackTarget && Me->CurrentAttackTarget != Player) return;
 
 		BBC->SetValue<UBlackboardKeyType_Bool>("HasLineOfSight", false);
 		BBC->ClearValue("TargetActor");

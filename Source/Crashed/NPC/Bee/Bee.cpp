@@ -1,5 +1,6 @@
 #include "Bee.h"
 #include "BeeAIController.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Crashed/HealthComponent.h"
 
@@ -14,6 +15,9 @@ ABee::ABee()
 	AttackDamage    = 5.f;
 	AttackRate      = 2.f;
 	DetectionRadius = 800.f;
+	
+	GetCapsuleComponent()->SetCollisionResponseToChannel(
+	   ECC_Pawn, ECR_Overlap);
 }
 
 void ABee::BeginPlay()
