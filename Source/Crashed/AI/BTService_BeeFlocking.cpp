@@ -70,12 +70,16 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
                 + AlignDir     * Self->AlignmentWeight;
     }
 
-    // Gentle upward bias to keep bees airborne
-    Desired += FVector(0.f, 0.f, 30.f);
-
     if (!Desired.IsNearlyZero())
     {
-        const FVector FlockTarget = SelfLoc + Desired.GetSafeNormal() * 200.f;
-        BB->SetValueAsVector(TEXT("TargetLocation"), FlockTarget);
+        BB->SetValueAsVector(TEXT("TargetLocation"), SelfLoc + Desired.GetSafeNormal() * 200.f);
+    }
+    else
+    {
+        // No neighbors in range — wander to a random nearby point
+        const float Angle = FMath::FRandRange(0.f, 2.f * PI);
+        const float Dist  = FMath::FRandRange(200.f, 600.f);
+        BB->SetValueAsVector(TEXT("TargetLocation"),
+            SelfLoc + FVector(FMath::Cos(Angle) * Dist, FMath::Sin(Angle) * Dist, 0.f));
     }
 }

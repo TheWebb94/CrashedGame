@@ -7,21 +7,18 @@ ABee::ABee()
 {
 	AIControllerClass = ABeeAIController::StaticClass();
 
-	GetCharacterMovement()->DefaultLandMovementMode  = MOVE_Flying;
-	GetCharacterMovement()->DefaultWaterMovementMode = MOVE_Flying;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
-	MoveSpeed     = 450.f;
-	AttackRange   = 80.f;
-	AttackDamage  = 5.f;
-	AttackRate    = 2.f;
+	MoveSpeed       = 450.f;
+	AttackRange     = 80.f;
+	AttackDamage    = 5.f;
+	AttackRate      = 2.f;
 	DetectionRadius = 800.f;
 }
 
 void ABee::BeginPlay()
 {
 	Super::BeginPlay();
-	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 }
 
 void ABee::PerformAttack_Implementation()

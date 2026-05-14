@@ -39,8 +39,20 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
 	float DesiredSeparation = 60.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
+	float WanderRadius = 1500.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
+	float WanderUpdateInterval = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
+	float WanderWeight = 1.2f;
+
+	FVector WanderTarget = FVector::ZeroVector;
+	float   LastWanderUpdate = -999.f;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Pollination")
-	float PollinationScanRadius = 3000.f;
+	float PollinationScanRadius = 6000.f;
 
 	// Seconds before this bee can re-pollinate the same spawner
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Pollination")
