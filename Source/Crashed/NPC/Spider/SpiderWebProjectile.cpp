@@ -1,6 +1,9 @@
 #include "SpiderWebProjectile.h"
 
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
+#include "Crashed/NPC/Bee/Bee.h"
+#include "Crashed/NPC/Bee/BeeAIController.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -44,6 +47,18 @@ void ASpiderWebProjectile::OnOverlap(UPrimitiveComponent* OverlappedComponent, A
     {
         EntangleTarget(OtherActor);
         Destroy();
+    }
+    // If we hit a bee, make it aggro the spider that fired this projectile
+    if (ABee* HitBee = Cast<ABee>(OtherActor))
+    {
+        AActor* Spider = GetOwner();
+        HitBee->bIsDefending = true;
+        HitBee->CurrentAttackTarget = Spider;
+        if (ABeeAIController* AIC = Cast<ABeeAIController>(HitBee->GetController()))
+        {
+            AIC->BBC->SetValueAsObject(TEXT("TargetActor"), Spider);
+            AIC->BBC->SetValueAsBool(TEXT("IsDefending"), true);
+        }
     }
 }
 

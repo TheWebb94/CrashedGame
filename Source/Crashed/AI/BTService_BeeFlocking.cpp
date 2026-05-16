@@ -3,8 +3,8 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Crashed/NPC/Bee/Bee.h"
 #include "Crashed/NPC/Bee/BeeHive.h"
-#include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 UBTService_BeeFlocking::UBTService_BeeFlocking()
 {
@@ -27,66 +27,64 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
 
     const FVector SelfLoc = Self->GetActorLocation();
 
+    // --- Swarm master: wander freely within roam distance ---
     if (Self->bIsSwarmMaster)
-{
-    if (BB->GetValueAsBool(TEXT("HasPollinateTarget"))) return;
-
-    // Gather hive info for roam clamping
-    FVector HiveLocation  = FVector::ZeroVector;
-    float   MaxRoam       = 0.f;
-    bool    bHasHive      = Self->OwnerHive.IsValid();
-    if (bHasHive)
     {
-        HiveLocation = Self->OwnerHive->GetActorLocation();
-        MaxRoam      = Self->OwnerHive->MaxRoamDistance;
-    }
+        if (BB->GetValueAsBool(TEXT("HasPollinateTarget"))) return;
 
-    // If already outside the boundary, head straight back
-    if (bHasHive && MaxRoam > 0.f &&
-        FVector::Dist(SelfLoc, HiveLocation) > MaxRoam)
-    {
-        BB->SetValueAsVector(TEXT("TargetLocation"), HiveLocation);
-        Self->WanderTarget = FVector::ZeroVector; // reset so next pick is fresh
+        FVector HiveLocation = FVector::ZeroVector;
+        float   MaxRoam      = 0.f;
+        bool    bHasHive     = Self->OwnerHive.IsValid();
+        if (bHasHive)
+        {
+            HiveLocation = Self->OwnerHive->GetActorLocation();
+            MaxRoam      = Self->OwnerHive->MaxRoamDistance;
+        }
+
+        if (bHasHive && MaxRoam > 0.f &&
+            FVector::Dist(SelfLoc, HiveLocation) > MaxRoam)
+        {
+            BB->SetValueAsVector(TEXT("TargetLocation"), HiveLocation);
+            Self->WanderTarget = FVector::ZeroVector;
+            return;
+        }
+
+        const float Now          = GetWorld()->GetTimeSeconds();
+        const float DistToTarget = FVector::Dist(SelfLoc, Self->WanderTarget);
+        if (Self->WanderTarget.IsZero() ||
+            DistToTarget < 200.f ||
+            (Now - Self->LastWanderUpdate) >= Self->WanderUpdateInterval)
+        {
+            const FVector Forward     = Self->GetActorForwardVector();
+            const float   ForwardBias = FMath::FRandRange(-60.f, 60.f);
+            const float   Yaw         = FMath::Atan2(Forward.Y, Forward.X)
+                                        + FMath::DegreesToRadians(ForwardBias);
+            const float   WanderDist  = FMath::FRandRange(400.f, Self->WanderRadius * 0.5f);
+            FVector Candidate = SelfLoc + FVector(FMath::Cos(Yaw) * WanderDist,
+                                                   FMath::Sin(Yaw) * WanderDist, 0.f);
+
+            if (bHasHive && MaxRoam > 0.f)
+            {
+                FVector ToCandidate = Candidate - HiveLocation;
+                if (ToCandidate.Size() > MaxRoam)
+                    Candidate = HiveLocation + ToCandidate.GetSafeNormal() * MaxRoam;
+            }
+
+            Self->WanderTarget     = Candidate;
+            Self->LastWanderUpdate = Now;
+        }
+
+        BB->SetValueAsVector(TEXT("TargetLocation"), Self->WanderTarget);
         return;
     }
 
-    const float Now          = GetWorld()->GetTimeSeconds();
-    const float DistToTarget = FVector::Dist(SelfLoc, Self->WanderTarget);
-    if (Self->WanderTarget.IsZero() ||
-        DistToTarget < 200.f ||
-        (Now - Self->LastWanderUpdate) >= Self->WanderUpdateInterval)
-    {
-        const FVector Forward     = Self->GetActorForwardVector();
-        const float   ForwardBias = FMath::FRandRange(-60.f, 60.f);
-        const float   Yaw         = FMath::Atan2(Forward.Y, Forward.X)
-                                    + FMath::DegreesToRadians(ForwardBias);
-        const float   WanderDist  = FMath::FRandRange(400.f, Self->WanderRadius * 0.5f);
-        FVector Candidate = SelfLoc + FVector(FMath::Cos(Yaw) * WanderDist,
-                                               FMath::Sin(Yaw) * WanderDist, 0.f);
-
-        // Clamp candidate so it stays within MaxRoamDistance of hive
-        if (bHasHive && MaxRoam > 0.f)
-        {
-            FVector ToCandidate = Candidate - HiveLocation;
-            if (ToCandidate.Size() > MaxRoam)
-                Candidate = HiveLocation + ToCandidate.GetSafeNormal() * MaxRoam;
-        }
-
-        Self->WanderTarget     = Candidate;
-        Self->LastWanderUpdate = Now;
-    }
-
-    BB->SetValueAsVector(TEXT("TargetLocation"), Self->WanderTarget);
-    return;
-}
-
-    // Follower bees: track the swarm master
+    // --- Follower: track swarm master with speed boost by distance ---
     if (Self->OwnerHive.IsValid())
     {
         if (ABee* Master = Self->OwnerHive->GetSwarmMaster())
         {
             const FVector ToSelf      = (SelfLoc - Master->GetActorLocation()).GetSafeNormal();
-            const FVector GatherPoint = Master->GetActorLocation() + ToSelf;
+            const FVector GatherPoint = Master->GetActorLocation() + ToSelf * (Self->DesiredSeparation * 1.2f);
             BB->SetValueAsVector(TEXT("TargetLocation"), GatherPoint);
 
             const float DistToGather = FVector::Dist(SelfLoc, GatherPoint);
@@ -97,13 +95,12 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
         }
     }
 
-    // Fallback (no hive / no master): original flocking
+    // --- Fallback: full flocking (no hive or no master) ---
     const float RadiusSq = Self->FlockingRadius * Self->FlockingRadius;
 
     TArray<AActor*> AllBees;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABee::StaticClass(), AllBees);
 
-    FVector Separation  = FVector::ZeroVector;
     FVector CohesionSum = FVector::ZeroVector;
     FVector AlignSum    = FVector::ZeroVector;
     int32   Count       = 0;
@@ -115,12 +112,6 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
 
         const float DistSq = FVector::DistSquared(SelfLoc, Other->GetActorLocation());
         if (DistSq > RadiusSq) continue;
-
-        const float   Dist    = FMath::Sqrt(DistSq);
-        const FVector ToOther = Other->GetActorLocation() - SelfLoc;
-
-        if (Dist < Self->DesiredSeparation && Dist > KINDA_SMALL_NUMBER)
-            Separation -= ToOther.GetSafeNormal() * (Self->DesiredSeparation - Dist);
 
         CohesionSum += Other->GetActorLocation();
 
@@ -136,8 +127,7 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
     {
         FVector CohesionDir = ((CohesionSum / (float)Count) - SelfLoc).GetSafeNormal();
         FVector AlignDir    = (AlignSum / (float)Count).GetSafeNormal();
-        Desired = Separation   * Self->SeparationWeight
-                + CohesionDir * Self->CohesionWeight
+        Desired = CohesionDir * Self->CohesionWeight
                 + AlignDir    * Self->AlignmentWeight;
     }
 

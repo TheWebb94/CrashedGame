@@ -10,11 +10,12 @@
 #include "NavigationSystem.h"
 #include "Crashed/HealthComponent.h"
 #include "Crashed/NPC/Ants/AntQueen.h"
+#include "Crashed/NPC/Bee/Bee.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 ASpiderAIController::ASpiderAIController()
 {
-    PrimaryActorTick.bCanEverTick = false; // we use a timer instead of Tick
+    PrimaryActorTick.bCanEverTick = false;
 
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
     SetPerceptionComponent(*CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception")));
@@ -50,11 +51,11 @@ FRotator ASpiderAIController::GetControlRotation() const
     return FRotator(0.f, GetPawn()->GetActorRotation().Yaw, 0.f);
 }
 
-//calculates the 'risk score' for the area
-// Risk score  (0-1)
-// Player present in radius = +0.50
-// Each soldier ant in radius = +0.30  (capped so ants alone top at ~0.50)
-// Each worker/healer ant   = +0.10
+// Risk score (0-1)
+// Player present in radius    = +0.50
+// Each soldier ant in radius  = +0.30
+// Each worker/healer ant      = +0.10
+// Each bee in radius          = +0.25
 float ASpiderAIController::CalculateRiskScore() const
 {
     APawn* MyPawn = GetPawn();
@@ -63,24 +64,20 @@ float ASpiderAIController::CalculateRiskScore() const
     const FVector Origin = MyPawn->GetActorLocation();
     float Risk = 0.f;
 
-    // Check player
     APlayerCharacter* Player = Cast<APlayerCharacter>(
         UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     if (Player && FVector::Dist(Origin, Player->GetActorLocation()) <= ThreatScanRadius)
         Risk += 0.5f;
 
-    // Check ants
     TArray<AActor*> FoundAnts;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AForestAnt::StaticClass(), FoundAnts);
     for (AActor* Actor : FoundAnts)
     {
         AForestAnt* Ant = Cast<AForestAnt>(Actor);
         if (!Ant || FVector::Dist(Origin, Ant->GetActorLocation()) > ThreatScanRadius) continue;
-
         Risk += (Ant->AntType == EAntType::Soldier) ? 0.3f : 0.1f;
     }
-    
-    //if Queen is nearby
+
     TArray<AActor*> FoundQueens;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAntQueen::StaticClass(), FoundQueens);
     for (AActor* A : FoundQueens)
@@ -88,12 +85,19 @@ float ASpiderAIController::CalculateRiskScore() const
         if (FVector::Dist(Origin, A->GetActorLocation()) <= ThreatScanRadius)
             Risk += 0.3f;
     }
+
+    TArray<AActor*> FoundBees;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABee::StaticClass(), FoundBees);
+    for (AActor* A : FoundBees)
+    {
+        if (FVector::Dist(Origin, A->GetActorLocation()) <= ThreatScanRadius)
+            Risk += 0.25f;
+    }
+
     return FMath::Clamp(Risk, 0.f, 1.f);
 }
 
-
-
-// Best attack target: player > AntQueen > nearest ForestAnt
+// Priority: entangled > Player > AntQueen > Bee > nearest ForestAnt
 AActor* ASpiderAIController::FindBestTarget() const
 {
     APawn* MyPawn = GetPawn();
@@ -126,6 +130,15 @@ AActor* ASpiderAIController::FindBestTarget() const
             Candidates.Add(Char);
     }
 
+    TArray<AActor*> FoundBees;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABee::StaticClass(), FoundBees);
+    for (AActor* A : FoundBees)
+    {
+        ACharacter* Char = Cast<ACharacter>(A);
+        if (Char && FVector::Dist(Origin, Char->GetActorLocation()) <= ThreatScanRadius)
+            Candidates.Add(Char);
+    }
+
     // Priority 1: nearest entangled target
     ACharacter* NearestEntangled = nullptr;
     float NearestEntangledDist = FLT_MAX;
@@ -144,7 +157,7 @@ AActor* ASpiderAIController::FindBestTarget() const
     if (Player && FVector::Dist(Origin, Player->GetActorLocation()) <= ThreatScanRadius)
         return Player;
 
-    // Priority 3: AntQueen (high-value target)
+    // Priority 3: AntQueen
     AActor* NearestQueen = nullptr;
     float NearestQueenDist = ThreatScanRadius;
     for (AActor* A : FoundQueens)
@@ -154,7 +167,17 @@ AActor* ASpiderAIController::FindBestTarget() const
     }
     if (NearestQueen) return NearestQueen;
 
-    // Priority 4: nearest ForestAnt
+    // Priority 4: nearest Bee
+    AActor* NearestBee = nullptr;
+    float NearestBeeDist = ThreatScanRadius;
+    for (AActor* A : FoundBees)
+    {
+        float D = FVector::Dist(Origin, A->GetActorLocation());
+        if (D < NearestBeeDist) { NearestBeeDist = D; NearestBee = A; }
+    }
+    if (NearestBee) return NearestBee;
+
+    // Priority 5: nearest ForestAnt
     AActor* Nearest = nullptr;
     float NearestDist = ThreatScanRadius;
     for (AActor* A : FoundAnts)
@@ -173,7 +196,6 @@ FVector ASpiderAIController::CalcFleeDestination(const FVector& ThreatOrigin) co
     FVector FleeDir = (MyPawn->GetActorLocation() - ThreatOrigin).GetSafeNormal();
     FVector Candidate = MyPawn->GetActorLocation() + FleeDir * 800.f;
 
-    // Project onto nav mesh
     FNavLocation NavLoc;
     UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
     if (NavSys && NavSys->ProjectPointToNavigation(Candidate, NavLoc))
@@ -182,9 +204,6 @@ FVector ASpiderAIController::CalcFleeDestination(const FVector& ThreatOrigin) co
     return Candidate;
 }
 
-// ---------------------------------------------------------------------------
-// Core: evaluate utility scores, pick winner, execute
-// ---------------------------------------------------------------------------
 void ASpiderAIController::EvaluateAndExecute()
 {
     ASpider* Spider = Cast<ASpider>(GetPawn());
@@ -198,7 +217,6 @@ void ASpiderAIController::EvaluateAndExecute()
         ? FVector::Dist(Spider->GetActorLocation(), Target->GetActorLocation())
         : ThreatScanRadius;
 
-    // Check if the chosen target is currently entangled
     bool bTargetEntangled = false;
     if (Target)
     {
@@ -207,13 +225,9 @@ void ASpiderAIController::EvaluateAndExecute()
             bTargetEntangled = TargetChar->GetCharacterMovement()->MaxWalkSpeed <= 0.f;
     }
 
-    // --- Utility scores ---
-
-    // Reduce patrol when a target exists — don't wander while something is in range
     float PatrolScore = (1.f - Risk) * 0.5f + HealthNorm * 0.3f;
     if (Target) PatrolScore *= 0.1f;
 
-    // Suppress ranged if target is already entangled — no point wasting a web
     float RangedScore = 0.f;
     if (Target && Spider->bCanRangedAttack
         && DistToTarget >= MinRangedDistance
@@ -224,15 +238,11 @@ void ASpiderAIController::EvaluateAndExecute()
         RangedScore = FMath::Max(0.f, DistFactor) * (1.f - Risk * 0.3f);
     }
 
-    // Melee: scores positively across the full scan radius so the spider always
-    // closes in on a target. Peaks once within actual attack range.
     const float EffectiveMeleeRange = Spider->AttackRange;
     float MeleeScore = 0.f;
     if (Target)
     {
-        // Approach factor — grows as spider closes from ThreatScanRadius to 0
         float ApproachFactor = 1.f - FMath::Clamp(DistToTarget / ThreatScanRadius, 0.f, 1.f);
-        // Melee factor — stronger once within actual attack range
         float MeleeFactor = DistToTarget < EffectiveMeleeRange
             ? 1.f - DistToTarget / EffectiveMeleeRange
             : 0.f;
@@ -242,13 +252,11 @@ void ASpiderAIController::EvaluateAndExecute()
 
     float RetreatScore = Risk * 0.6f + (1.f - HealthNorm) * 0.4f;
 
-    // --- Apply weights ---
     float WPatrol  = PatrolScore  * PatrolWeight;
     float WRanged  = RangedScore  * RangedWeight;
     float WMelee   = MeleeScore   * MeleeWeight;
     float WRetreat = RetreatScore * RetreatWeight;
 
-    // --- Pick winner ---
     ESpiderState NewState = ESpiderState::Patrol;
     float Best = WPatrol;
     if (WRanged  > Best) { Best = WRanged;  NewState = ESpiderState::RangedAttack; }
@@ -260,7 +268,6 @@ void ASpiderAIController::EvaluateAndExecute()
 
     CurrentState = NewState;
 
-    // --- Execute ---
     switch (CurrentState)
     {
     case ESpiderState::Patrol:

@@ -6,6 +6,7 @@
 
 class AFoodSpawner;
 class ABeeHive;
+class USphereComponent;
 
 UCLASS(Abstract)
 class CRASHED_API ABee : public ABaseEnemy
@@ -18,16 +19,24 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Bee")
 	TWeakObjectPtr<ABeeHive> OwnerHive;
 
-	float PreviousHealth = -1.f;
-	
 	UPROPERTY(BlueprintReadWrite, Category = "Bee|Combat")
 	bool bIsDefending = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Bee")
 	bool bIsSwarmMaster = false;
-	
-	// Per-bee cooldown map: FoodSpawner → world time when cooldown expires
+
+	float PreviousHealth = -1.f;
+
 	TMap<TWeakObjectPtr<AFoodSpawner>, float> PollinationCooldowns;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bee|Separation")
+	USphereComponent* SeparationSphere;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Separation")
+	float SeparationSphereRadius = 250.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Separation")
+	float SeparationStrength = 600.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
 	float FlockingRadius = 400.f;
@@ -42,7 +51,7 @@ public:
 	float AlignmentWeight = 0.8f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
-	float DesiredSeparation = 150.f;
+	float DesiredSeparation = 60.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Flocking")
 	float WanderRadius = 1500.f;
@@ -55,18 +64,18 @@ public:
 
 	FVector WanderTarget = FVector::ZeroVector;
 	float   LastWanderUpdate = -999.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Bee|Pollination")
-	float PollinationScanRadius = 6000.f;
 
-	// Seconds before this bee can re-pollinate the same spawner
+	UPROPERTY(EditDefaultsOnly, Category = "Bee|Pollination")
+	float PollinationScanRadius = 3000.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Bee|Pollination")
 	float PollinationCooldown = 300.f;
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void PerformAttack_Implementation() override;
-	
+
 	UFUNCTION()
 	void OnBeeHealthChanged(float NewHealth, float MaxHealth);
 };
