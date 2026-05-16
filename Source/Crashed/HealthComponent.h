@@ -38,6 +38,11 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Health")
 	FOnDeath OnDeath;
+	
+	UPROPERTY()
+	AActor* LastInstigator = nullptr;
+
+	void ApplyDamageFrom(float Amount, AActor* Instigator);
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void ApplyDamage(float amount);

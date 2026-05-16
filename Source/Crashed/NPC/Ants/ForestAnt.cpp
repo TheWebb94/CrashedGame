@@ -115,5 +115,5 @@ void AForestAnt::PerformAttack_Implementation()
             > AttackRange * AttackRange) return;
 
     if (UHealthComponent* HC = Target->FindComponentByClass<UHealthComponent>())
-        HC->ApplyDamage(AttackDamage);
+        HC->ApplyDamageFrom(AttackDamage, this);
 }

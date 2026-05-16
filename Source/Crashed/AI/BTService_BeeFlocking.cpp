@@ -58,7 +58,7 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
         if (ABee* Master = Self->OwnerHive->GetSwarmMaster())
         {
             const FVector ToSelf      = (SelfLoc - Master->GetActorLocation()).GetSafeNormal();
-            const FVector GatherPoint = Master->GetActorLocation() + ToSelf * (Self->DesiredSeparation * 3.f);
+            const FVector GatherPoint = Master->GetActorLocation() + ToSelf;
             BB->SetValueAsVector(TEXT("TargetLocation"), GatherPoint);
 
             const float DistToGather = FVector::Dist(SelfLoc, GatherPoint);

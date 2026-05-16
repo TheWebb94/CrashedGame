@@ -18,6 +18,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Bee")
 	TWeakObjectPtr<ABeeHive> OwnerHive;
 
+	float PreviousHealth = -1.f;
+	
 	UPROPERTY(BlueprintReadWrite, Category = "Bee|Combat")
 	bool bIsDefending = false;
 
@@ -64,4 +66,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void PerformAttack_Implementation() override;
+	
+	UFUNCTION()
+	void OnBeeHealthChanged(float NewHealth, float MaxHealth);
 };

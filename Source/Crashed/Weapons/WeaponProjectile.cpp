@@ -56,7 +56,9 @@ void AWeaponProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 	UHealthComponent* HealthComp = OtherActor->FindComponentByClass<UHealthComponent>();
 	if (HealthComp)
 	{
-		HealthComp->ApplyDamage(Damage);
+		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+		APawn* ControlledPawn = PlayerController->GetPawn();
+		HealthComp->ApplyDamageFrom(Damage, ControlledPawn);
 	}
 
 	Destroy();
@@ -117,7 +119,10 @@ void AWeaponProjectile::Explode()
 		UHealthComponent* targetHealthComponent = Actor->FindComponentByClass<UHealthComponent>();
 		if (targetHealthComponent)
 		{
-			targetHealthComponent->ApplyDamage(Damage);
+			APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+			APawn* ControlledPawn = PlayerController->GetPawn();
+			
+			targetHealthComponent->ApplyDamageFrom(Damage, ControlledPawn);
 		}
 	}
 

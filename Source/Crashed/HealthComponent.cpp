@@ -33,6 +33,12 @@ void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
+void UHealthComponent::ApplyDamageFrom(float Amount, AActor* Instigator)
+{
+	LastInstigator = Instigator;
+	ApplyDamage(Amount);
+}
+
 void UHealthComponent::ApplyDamage(float amount)
 {
 	if (IsDead()) return;

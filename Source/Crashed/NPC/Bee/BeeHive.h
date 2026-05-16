@@ -44,7 +44,9 @@ public:
 	float DefendDuration = 15.f;
 
 	ABee* GetSwarmMaster() const { return SwarmMaster.IsValid() ? SwarmMaster.Get() : nullptr; }
-
+	
+	void SendBeesToAttack(AActor* Target);
+	
 private:
 	
 	TWeakObjectPtr<ABee> SwarmMaster;
@@ -55,7 +57,7 @@ private:
 
 	void SpawnBee();
 	void TryRespawnBee();
-	void SendBeesToAttack(AActor* Target);
+	
 	void ResetDefendState();
 	void PromoteSwarmMaster();
 	
