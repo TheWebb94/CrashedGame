@@ -94,7 +94,7 @@ private:
 
     bool  bThreshold66Triggered = false;
     bool  bThreshold33Triggered = false;
-    float FoodSupply            = 0.f;
+    float FoodSupply            = 100.f;
 
     void CheckAndSpawn();
     void SpawnAnt(TSubclassOf<AForestAnt> AntClass, TArray<TWeakObjectPtr<AForestAnt>>& TrackingArray);

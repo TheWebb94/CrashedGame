@@ -17,5 +17,6 @@ class CRASHED_API UBTTask_GetPathPoints : public UBTTask_BlackboardBase
         UBTTask_GetPathPoints();
         virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
         int32 Index = 0;
+	bool bIsInitialized = false;
 
 };

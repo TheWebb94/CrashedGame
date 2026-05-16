@@ -65,7 +65,7 @@ void AAntQueen::SpawnAnt(TSubclassOf<AForestAnt> AntClass,
     const float  Angle         = FMath::FRandRange(0.f, 2.f * PI);
     const float  Radius        = FMath::FRandRange(100.f, SpawnRadius);
     const FVector SpawnLocation = GetActorLocation()
-        + FVector(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, 0.f);
+        + FVector(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, 0.0f);
 
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
