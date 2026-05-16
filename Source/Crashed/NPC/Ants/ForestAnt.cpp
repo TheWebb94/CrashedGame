@@ -117,3 +117,11 @@ void AForestAnt::PerformAttack_Implementation()
     if (UHealthComponent* HC = Target->FindComponentByClass<UHealthComponent>())
         HC->ApplyDamageFrom(AttackDamage, this);
 }
+
+void AForestAnt::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.f, 480.f, 0.f);
+    bUseControllerRotationYaw = false;
+}

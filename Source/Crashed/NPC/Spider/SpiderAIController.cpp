@@ -1,7 +1,6 @@
 #include "SpiderAIController.h"
 
 #include "Spider.h"
-#include "Waypoint.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Crashed/NPC/Ants/ForestAnt.h"
@@ -12,6 +11,7 @@
 #include "Crashed/NPC/Ants/AntQueen.h"
 #include "Crashed/NPC/Bee/Bee.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Navigation/PathFollowingComponent.h"
 
 ASpiderAIController::ASpiderAIController()
 {
@@ -20,9 +20,9 @@ ASpiderAIController::ASpiderAIController()
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
     SetPerceptionComponent(*CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception")));
 
-    SightConfig->SightRadius                            = AISightRadius;
-    SightConfig->LoseSightRadius                        = AILoseSightRadius;
-    SightConfig->PeripheralVisionAngleDegrees           = AIFieldOfView;
+    SightConfig->SightRadius                              = AISightRadius;
+    SightConfig->LoseSightRadius                         = AILoseSightRadius;
+    SightConfig->PeripheralVisionAngleDegrees            = AIFieldOfView;
     SightConfig->SetMaxAge(AISightAge);
     SightConfig->DetectionByAffiliation.bDetectEnemies    = true;
     SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
@@ -51,11 +51,6 @@ FRotator ASpiderAIController::GetControlRotation() const
     return FRotator(0.f, GetPawn()->GetActorRotation().Yaw, 0.f);
 }
 
-// Risk score (0-1)
-// Player present in radius    = +0.50
-// Each soldier ant in radius  = +0.30
-// Each worker/healer ant      = +0.10
-// Each bee in radius          = +0.25
 float ASpiderAIController::CalculateRiskScore() const
 {
     APawn* MyPawn = GetPawn();
@@ -97,7 +92,6 @@ float ASpiderAIController::CalculateRiskScore() const
     return FMath::Clamp(Risk, 0.f, 1.f);
 }
 
-// Priority: entangled > Player > AntQueen > Bee > nearest ForestAnt
 AActor* ASpiderAIController::FindBestTarget() const
 {
     APawn* MyPawn = GetPawn();
@@ -191,9 +185,9 @@ AActor* ASpiderAIController::FindBestTarget() const
 FVector ASpiderAIController::CalcFleeDestination(const FVector& ThreatOrigin) const
 {
     APawn* MyPawn = GetPawn();
-    if (!MyPawn) return MyPawn->GetActorLocation();
+    if (!MyPawn) return FVector::ZeroVector;
 
-    FVector FleeDir = (MyPawn->GetActorLocation() - ThreatOrigin).GetSafeNormal();
+    FVector FleeDir   = (MyPawn->GetActorLocation() - ThreatOrigin).GetSafeNormal();
     FVector Candidate = MyPawn->GetActorLocation() + FleeDir * 800.f;
 
     FNavLocation NavLoc;
@@ -271,9 +265,26 @@ void ASpiderAIController::EvaluateAndExecute()
     switch (CurrentState)
     {
     case ESpiderState::Patrol:
-        if (Spider->NextWayPoint)
-            MoveToActor(Spider->NextWayPoint, 5.f);
-        break;
+        {
+            const float DistToDest = FVector::Dist(Spider->GetActorLocation(), PatrolDestination);
+
+            if (!bHasPatrolDestination || DistToDest < PatrolArrivalRadius)
+            {
+                UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+                FNavLocation NavLoc;
+                if (NavSys && NavSys->GetRandomReachablePointInRadius(
+                        Spider->GetActorLocation(), PatrolRadius, NavLoc))
+                {
+                    PatrolDestination     = NavLoc.Location;
+                    bHasPatrolDestination = true;
+                }
+            }
+
+            if (bHasPatrolDestination && GetMoveStatus() != EPathFollowingStatus::Type::Moving)
+                MoveToLocation(PatrolDestination, 5.f);
+
+            break;
+        }
 
     case ESpiderState::RangedAttack:
         if (Target)

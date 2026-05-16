@@ -63,7 +63,7 @@ protected:
     virtual void BeginPlay() override;
     virtual void OnDeath_Implementation() override;
     virtual void PerformAttack_Implementation() override;
-
+    virtual void Tick(float DeltaTime) override;
     TWeakObjectPtr<AAntQueen> Queen;
 
 private:
