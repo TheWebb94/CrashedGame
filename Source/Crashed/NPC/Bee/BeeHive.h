@@ -43,6 +43,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "BeeHive")
 	float DefendDuration = 15.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "BeeHive")
+	float MaxRoamDistance = 5000.f;
+	
 	ABee* GetSwarmMaster() const { return SwarmMaster.IsValid() ? SwarmMaster.Get() : nullptr; }
 	
 	void SendBeesToAttack(AActor* Target);

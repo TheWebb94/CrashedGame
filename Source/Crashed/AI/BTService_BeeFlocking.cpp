@@ -28,29 +28,57 @@ void UBTService_BeeFlocking::TickNode(UBehaviorTreeComponent& OwnerComp,
     const FVector SelfLoc = Self->GetActorLocation();
 
     if (Self->bIsSwarmMaster)
-    {
-        // Swarm master wanders freely to find pollinate targets
-        // Step back if the BT already has a target queued
-        if (BB->GetValueAsBool(TEXT("HasPollinateTarget"))) return;
+{
+    if (BB->GetValueAsBool(TEXT("HasPollinateTarget"))) return;
 
-        const float Now = GetWorld()->GetTimeSeconds();
-        const float DistToTarget = FVector::Dist(SelfLoc, Self->WanderTarget);
-        if (Self->WanderTarget.IsZero() ||
-            DistToTarget < 200.f ||
-            (Now - Self->LastWanderUpdate) >= Self->WanderUpdateInterval)
-        {
-            const FVector Forward     = Self->GetActorForwardVector();
-            const float   ForwardBias = FMath::FRandRange(-60.f, 60.f); // degrees
-            const float   Yaw         = FMath::Atan2(Forward.Y, Forward.X)
-                                        + FMath::DegreesToRadians(ForwardBias);
-            const float   Dist        = FMath::FRandRange(400.f, Self->WanderRadius * 0.5f);
-            Self->WanderTarget        = SelfLoc + FVector(FMath::Cos(Yaw) * Dist,
-                                                           FMath::Sin(Yaw) * Dist, 0.f);
-            Self->LastWanderUpdate    = Now;
-        }
-        BB->SetValueAsVector(TEXT("TargetLocation"), Self->WanderTarget);
+    // Gather hive info for roam clamping
+    FVector HiveLocation  = FVector::ZeroVector;
+    float   MaxRoam       = 0.f;
+    bool    bHasHive      = Self->OwnerHive.IsValid();
+    if (bHasHive)
+    {
+        HiveLocation = Self->OwnerHive->GetActorLocation();
+        MaxRoam      = Self->OwnerHive->MaxRoamDistance;
+    }
+
+    // If already outside the boundary, head straight back
+    if (bHasHive && MaxRoam > 0.f &&
+        FVector::Dist(SelfLoc, HiveLocation) > MaxRoam)
+    {
+        BB->SetValueAsVector(TEXT("TargetLocation"), HiveLocation);
+        Self->WanderTarget = FVector::ZeroVector; // reset so next pick is fresh
         return;
     }
+
+    const float Now          = GetWorld()->GetTimeSeconds();
+    const float DistToTarget = FVector::Dist(SelfLoc, Self->WanderTarget);
+    if (Self->WanderTarget.IsZero() ||
+        DistToTarget < 200.f ||
+        (Now - Self->LastWanderUpdate) >= Self->WanderUpdateInterval)
+    {
+        const FVector Forward     = Self->GetActorForwardVector();
+        const float   ForwardBias = FMath::FRandRange(-60.f, 60.f);
+        const float   Yaw         = FMath::Atan2(Forward.Y, Forward.X)
+                                    + FMath::DegreesToRadians(ForwardBias);
+        const float   WanderDist  = FMath::FRandRange(400.f, Self->WanderRadius * 0.5f);
+        FVector Candidate = SelfLoc + FVector(FMath::Cos(Yaw) * WanderDist,
+                                               FMath::Sin(Yaw) * WanderDist, 0.f);
+
+        // Clamp candidate so it stays within MaxRoamDistance of hive
+        if (bHasHive && MaxRoam > 0.f)
+        {
+            FVector ToCandidate = Candidate - HiveLocation;
+            if (ToCandidate.Size() > MaxRoam)
+                Candidate = HiveLocation + ToCandidate.GetSafeNormal() * MaxRoam;
+        }
+
+        Self->WanderTarget     = Candidate;
+        Self->LastWanderUpdate = Now;
+    }
+
+    BB->SetValueAsVector(TEXT("TargetLocation"), Self->WanderTarget);
+    return;
+}
 
     // Follower bees: track the swarm master
     if (Self->OwnerHive.IsValid())
