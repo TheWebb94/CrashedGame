@@ -9,6 +9,7 @@
 ASpider::ASpider()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
 }
 
 void ASpider::BeginPlay()
@@ -19,6 +20,9 @@ void ASpider::BeginPlay()
 void ASpider::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 480.f, 0.f);
+	bUseControllerRotationYaw = false;
 }
 
 void ASpider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -30,7 +34,7 @@ void ASpider::PerformAttack_Implementation()
 {
 	if (!CurrentAttackTarget) return;
 	if (UHealthComponent* HC = CurrentAttackTarget->FindComponentByClass<UHealthComponent>())
-		HC->ApplyDamage(AttackDamage);
+		HC->ApplyDamageFrom(AttackDamage, this);
 }
 
 void ASpider::ShootWebProjectile(AActor* Target)

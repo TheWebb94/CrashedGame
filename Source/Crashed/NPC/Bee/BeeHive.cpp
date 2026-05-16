@@ -130,6 +130,23 @@ void ABeeHive::ResetDefendState()
 {
     AliveBees.RemoveAll([](const TWeakObjectPtr<ABee>& P) { return !P.IsValid(); });
 
+    // If any bee still has a living target, keep defending and re-check later
+    for (auto& BeePtr : AliveBees)
+    {
+        if (!BeePtr.IsValid()) continue;
+        AActor* Target = BeePtr->CurrentAttackTarget;
+        if (!Target) continue;
+
+        UHealthComponent* HC = Target->FindComponentByClass<UHealthComponent>();
+        if (HC && !HC->IsDead())
+        {
+            GetWorldTimerManager().SetTimer(DefendResetTimerHandle,
+                this, &ABeeHive::ResetDefendState, DefendDuration, false);
+            return;
+        }
+    }
+
+    // Target is dead or gone — stand down
     for (auto& BeePtr : AliveBees)
     {
         if (!BeePtr.IsValid()) continue;

@@ -4,6 +4,7 @@
 #include "Components/SphereComponent.h"
 #include "Crashed/NPC/Bee/Bee.h"
 #include "Crashed/NPC/Bee/BeeAIController.h"
+#include "Crashed/NPC/Bee/BeeHive.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -43,23 +44,17 @@ void ASpiderWebProjectile::OnOverlap(UPrimitiveComponent* OverlappedComponent, A
     UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex,
     bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (OtherActor && OtherActor != GetOwner())
-    {
-        EntangleTarget(OtherActor);
-        Destroy();
-    }
-    // If we hit a bee, make it aggro the spider that fired this projectile
+    if (!OtherActor || OtherActor == GetOwner()) return;
+
+    // Aggro whole swarm before entangling so the hive timer starts correctly
     if (ABee* HitBee = Cast<ABee>(OtherActor))
     {
-        AActor* Spider = GetOwner();
-        HitBee->bIsDefending = true;
-        HitBee->CurrentAttackTarget = Spider;
-        if (ABeeAIController* AIC = Cast<ABeeAIController>(HitBee->GetController()))
-        {
-            AIC->BBC->SetValueAsObject(TEXT("TargetActor"), Spider);
-            AIC->BBC->SetValueAsBool(TEXT("IsDefending"), true);
-        }
+        if (HitBee->OwnerHive.IsValid())
+            HitBee->OwnerHive->SendBeesToAttack(GetOwner());
     }
+
+    EntangleTarget(OtherActor);
+    Destroy();
 }
 
 void ASpiderWebProjectile::EntangleTarget(AActor* Target)

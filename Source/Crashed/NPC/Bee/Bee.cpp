@@ -17,9 +17,7 @@ ABee::ABee()
 	AttackDamage    = 5.f;
 	AttackRate      = 2.f;
 	DetectionRadius = 800.f;
-	
 		
-	//Set speration values
 	SeparationSphere = CreateDefaultSubobject<USphereComponent>(TEXT("SeparationSphere"));
 	SeparationSphere->SetupAttachment(RootComponent);
 	SeparationSphere->SetSphereRadius(SeparationSphereRadius);
@@ -33,6 +31,18 @@ void ABee::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// Ignore WorldStatic so bees fly through geometry; block WorldDynamic so
+	// bullets/webs land. overlap Pawn so flocking separation still works.
+	UCapsuleComponent* Cap = GetCapsuleComponent();
+	Cap->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);  // was QueryOnly
+	Cap->SetGenerateOverlapEvents(true);
+	Cap->SetCollisionObjectType(ECC_Pawn);
+	Cap->SetCollisionResponseToAllChannels(ECR_Ignore);
+	Cap->SetCollisionResponseToChannel(ECC_WorldStatic,  ECR_Block);
+	Cap->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+	Cap->SetCollisionResponseToChannel(ECC_Pawn,         ECR_Overlap);
+	Cap->SetCollisionResponseToChannel(ECC_Visibility,   ECR_Block);
+
 	PreviousHealth = HealthComponent ? HealthComponent->GetCurrentHealth() : 0.f;
 	if (HealthComponent)
 		HealthComponent->OnHealthChanged.AddDynamic(this, &ABee::OnBeeHealthChanged);
@@ -83,8 +93,6 @@ void ABee::OnBeeHealthChanged(float NewHealth, float MaxHealth)
 {
 	if (NewHealth >= PreviousHealth) { PreviousHealth = NewHealth; return; }
 	PreviousHealth = NewHealth;
-
-	if (bIsDefending) return;
 
 	AActor* Attacker = HealthComponent ? HealthComponent->LastInstigator : nullptr;
 	if (!Attacker) return;

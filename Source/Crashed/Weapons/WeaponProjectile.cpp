@@ -78,14 +78,40 @@ void AWeaponProjectile::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (!bLaunched) return;
 
-	const float StepDistance = Speed * DeltaTime;
-	SetActorLocation(GetActorLocation() + Direction * StepDistance, true);
+	const FVector Start       = GetActorLocation();
+	const float   StepDistance = Speed * DeltaTime;
+	const FVector End          = Start + Direction * StepDistance;
+
+	// Explicit pawn sweep — catches NPCs whose capsule collision profile doesn't reliably trigger OnComponentHit via the blocking sweep below.
+	TArray<AActor*> OverlappedActors;
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	TArray<AActor*> ActorsToIgnore = { this };
+	if (GetOwner())     ActorsToIgnore.Add(GetOwner());
+	if (GetInstigator()) ActorsToIgnore.Add(GetInstigator());
+
+	UKismetSystemLibrary::SphereOverlapActors(
+		GetWorld(), Start, CollisionComp->GetScaledSphereRadius(),
+		ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
+
+	for (AActor* Actor : OverlappedActors)
+	{
+		UHealthComponent* HC = Actor->FindComponentByClass<UHealthComponent>();
+		if (HC)
+		{
+			APlayerController* PC = GetWorld()->GetFirstPlayerController();
+			HC->ApplyDamageFrom(Damage, PC ? PC->GetPawn() : nullptr);
+			
+		}
+		Destroy();
+		return;
+	}
+
+	SetActorLocation(End, true);
 	DistanceTraveled += StepDistance;
 
 	if (DistanceTraveled >= TravelDistance)
-	{
 		Explode();
-	}
 }
 
 void AWeaponProjectile::Explode()
@@ -94,7 +120,7 @@ void AWeaponProjectile::Explode()
 
 	const FVector Center = GetActorLocation();
 	
-	//for calling functionality in blueprint (NS_)
+	//for calling functionality in blueprint
 	OnExplode.Broadcast();
 	
 	//DrawDebugSphere(GetWorld(), Center, ExplosionRadius, 16, FColor::Orange, false, 2.f, 0, 3.f);
