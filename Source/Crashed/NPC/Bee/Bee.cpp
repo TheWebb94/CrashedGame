@@ -13,9 +13,9 @@ ABee::ABee()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	MoveSpeed       = 450.f;
-	AttackRange     = 80.f;
+	AttackRange     = 250.f;
 	AttackDamage    = 5.f;
-	AttackRate      = 2.f;
+	AttackRate      = 2.f; // doesnt do anything as bees die on attack
 	DetectionRadius = 800.f;
 		
 	SeparationSphere = CreateDefaultSubobject<USphereComponent>(TEXT("SeparationSphere"));
@@ -51,13 +51,15 @@ void ABee::BeginPlay()
 void ABee::PerformAttack_Implementation()
 {
 	if (!CurrentAttackTarget) return;
-	if (FVector::DistSquared(GetActorLocation(), CurrentAttackTarget->GetActorLocation())
-			> AttackRange * AttackRange) return;
+
+	FVector Delta = CurrentAttackTarget->GetActorLocation() - GetActorLocation();
+	Delta.Z = 0.f;
+	if (Delta.SizeSquared() > AttackRange * AttackRange) return;
 
 	if (UHealthComponent* HC = CurrentAttackTarget->FindComponentByClass<UHealthComponent>())
 		HC->ApplyDamageFrom(AttackDamage, this);
-	
-	HealthComponent->ApplyDamage(HealthComponent->currentHealth); //kill self
+
+	HealthComponent->ApplyDamage(HealthComponent->currentHealth);
 }
 
 void ABee::Tick(float DeltaTime)

@@ -91,8 +91,7 @@ void AForestAnt::OnWorkerHealthChanged(float NewHealth, float MaxHealth)
 void AForestAnt::AlertNearbyThreat()
 {
     if (!Queen.IsValid()) return;
-    // Default to the player as the most likely attacker since HealthComponent
-    // doesn't carry attacker information
+    // Default to the player as the most likely attacker since HealthComponent doesn't carry attacker information
     APawn* Attacker = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
     Queen->AlertSoldiersNearby(GetActorLocation(), Attacker, WorkerAlertRadius);
 }
@@ -107,12 +106,11 @@ void AForestAnt::PerformAttack_Implementation()
     if (AntType == EAntType::Healer) return;
 
     AActor* Target = CurrentAttackTarget;
-    if (!Target)
-        Target = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
     if (!Target) return;
 
-    if (FVector::DistSquared(GetActorLocation(), Target->GetActorLocation())
-            > AttackRange * AttackRange) return;
+    FVector Delta = Target->GetActorLocation() - GetActorLocation();
+    Delta.Z = 0.f;
+    if (Delta.SizeSquared() > AttackRange * AttackRange) return;
 
     if (UHealthComponent* HC = Target->FindComponentByClass<UHealthComponent>())
         HC->ApplyDamageFrom(AttackDamage, this);
