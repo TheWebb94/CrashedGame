@@ -13,19 +13,25 @@ UBTTask_PickUpFood::UBTTask_PickUpFood()
 EBTNodeResult::Type UBTTask_PickUpFood::ExecuteTask(UBehaviorTreeComponent& OwnerComp,
 													uint8* NodeMemory)
 {
+	//config
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
 	AAIController* Controller = OwnerComp.GetAIOwner();
+	
+	//cast guards
 	if (!BB || !Controller)
 		return EBTNodeResult::Failed;
 
 	AFood* Food = Cast<AFood>(BB->GetValueAsObject(TEXT("FoodTarget")));
+	
+	//if target food is valid, set it as target
 	if (!Food || !Food->IsAvailable())
 	{
 		BB->SetValueAsObject(TEXT("FoodTarget"), nullptr);
 		BB->SetValueAsBool(TEXT("HasFoodTarget"), false);
 		return EBTNodeResult::Failed;
 	}
-
+	
+	//then take the food by setting the food as carried on the ant, depleting some food value from the food source, and setting the flag in the BB
 	const float Amount = Food->TakeFood();
 
 	AForestAnt* Ant = Cast<AForestAnt>(Controller->GetPawn());

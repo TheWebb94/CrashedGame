@@ -15,7 +15,7 @@ class CRASHED_API AAntHive : public AActor
 public:
 	AAntHive();
 
-	// Set in editor — links hive to its queen so the queen can spawn near the hive
+	//reference the queen so they cant talk to eachother
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Hive")
 	AAntQueen* Queen;
 

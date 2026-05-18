@@ -20,23 +20,29 @@ void UBTTask_HealAlly::ClearBBKeys(UBlackboardComponent* BB)
 
 EBTNodeResult::Type UBTTask_HealAlly::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+    //config
     AAIController* Controller = OwnerComp.GetAIOwner();
     UBlackboardComponent* BB  = OwnerComp.GetBlackboardComponent();
+    
+    //cast guards
     if (!Controller || !BB) return EBTNodeResult::Failed;
 
     APawn* Self = Controller->GetPawn();
     if (!Self) return EBTNodeResult::Failed;
 
     AForestAnt* Target = Cast<AForestAnt>(BB->GetValueAsObject(TEXT("HealTarget")));
-    if (!IsValid(Target) || !Target->HealthComponent) { ClearBBKeys(BB); return EBTNodeResult::Failed; }
-    if (Target->HealthComponent->GetHealthPercent() >= 1.f) { ClearBBKeys(BB); return EBTNodeResult::Succeeded; }
-    if (FVector::Dist(Self->GetActorLocation(), Target->GetActorLocation()) > HealRange)
+    
+    if (!IsValid(Target) || !Target->HealthComponent) { ClearBBKeys(BB); return EBTNodeResult::Failed; } //if the target is not valid, or doesnt have a health component return early
+    if (Target->HealthComponent->GetHealthPercent() >= 1.f) { ClearBBKeys(BB); return EBTNodeResult::Succeeded; } //if full health return early
+    if (FVector::Dist(Self->GetActorLocation(), Target->GetActorLocation()) > HealRange) //if outside heal range retrun early
         return EBTNodeResult::Failed;
 
-    Target->HealthComponent->ApplyHealth(HealAmount);
+    //if all above pass, heal the target until health is full
+    Target->HealthComponent->ApplyHealth(HealAmount); 
     if (Target->HealthComponent->GetHealthPercent() >= 1.f) { ClearBBKeys(BB); return EBTNodeResult::Succeeded; }
 
     CachedOwnerComp = &OwnerComp;
+    //after healing initialise a timer, complete node once timer has completed
     const float Interval = (HealRate > 0.f) ? (1.f / HealRate) : 1.f;
     Self->GetWorldTimerManager().SetTimer(HealTimerHandle, this, &UBTTask_HealAlly::DoHealTick, Interval, true);
 
@@ -45,17 +51,21 @@ EBTNodeResult::Type UBTTask_HealAlly::ExecuteTask(UBehaviorTreeComponent& OwnerC
 
 void UBTTask_HealAlly::DoHealTick()
 {
+    //guard
     if (!CachedOwnerComp) return;
 
+    //config
     AAIController* Controller = CachedOwnerComp->GetAIOwner();
     UBlackboardComponent* BB  = CachedOwnerComp->GetBlackboardComponent();
+    
+    //cast guards
     if (!Controller || !BB) { CachedOwnerComp = nullptr; return; }
 
     APawn* Self = Controller->GetPawn();
 
     AForestAnt* Target = Cast<AForestAnt>(BB->GetValueAsObject(TEXT("HealTarget")));
 
-    // Target gone or dead — give up entirely
+    //if target gone or dead give up
     if (!IsValid(Target) || !Target->HealthComponent)
     {
         ClearBBKeys(BB);
@@ -65,18 +75,20 @@ void UBTTask_HealAlly::DoHealTick()
         return;
     }
 
-    // Target walked out of range — stop healing, let BT re-run MoveTo to chase them
+    //target walked out of range — stop healing
+    //falls back to chase nearby heal target in BT
     if (Self && FVector::Dist(Self->GetActorLocation(), Target->GetActorLocation()) > HealRange)
     {
-      
         Self->GetWorldTimerManager().ClearTimer(HealTimerHandle);
         FinishLatentTask(*CachedOwnerComp, EBTNodeResult::Failed);
         CachedOwnerComp = nullptr;
         return;
     }
-
+    
+    //heal the target
     Target->HealthComponent->ApplyHealth(HealAmount);
 
+    //once heal target is full HP, clear target
     if (Target->HealthComponent->GetHealthPercent() >= 1.f)
     {
         ClearBBKeys(BB);

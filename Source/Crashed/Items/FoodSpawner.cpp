@@ -14,7 +14,7 @@ void AFoodSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Spawn initial food — bypass pollination for startup stock
+	// Spawn initial food, ignore pollination for startup stock
 	const int32 spawnDeficit = 2;
 	for (int32 i = 0; i < MaxFoodCount - spawnDeficit; ++i)
 		SpawnFood();
@@ -23,13 +23,16 @@ void AFoodSpawner::BeginPlay()
 		&AFoodSpawner::RefreshFood, SpawnInterval, true);
 }
 
+//public setter for abstracted private bool
 void AFoodSpawner::Pollinate()
 {
 	bIsPollinated = true;
 }
 
+
 void AFoodSpawner::SpawnFood()
 {
+	//cast guards
 	if (!FoodClass) return;
 
 	const float Angle  = FMath::FRandRange(0.f, 2.f * PI);
@@ -46,6 +49,7 @@ void AFoodSpawner::SpawnFood()
 		ActiveFood.Add(NewFood);
 }
 
+//clean up invalid food, check if we can spawn more, then refill missing food
 void AFoodSpawner::RefreshFood()
 {
 	ActiveFood.RemoveAll([](const TWeakObjectPtr<AFood>& F)

@@ -28,6 +28,7 @@ public:
 	// How long the hit target is frozen (seconds)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Web")
 	float EntangleDuration = 3.0f;
+	
 	//travel speed of projectile
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Web")
 	float ProjectileSpeed = 800.0f;

@@ -14,8 +14,11 @@ UBTTask_DeliverFood::UBTTask_DeliverFood()
 EBTNodeResult::Type UBTTask_DeliverFood::ExecuteTask(UBehaviorTreeComponent& OwnerComp,
 													 uint8* NodeMemory)
 {
+	//config
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
 	AAIController* Controller = OwnerComp.GetAIOwner();
+	
+	//cast guards
 	if (!BB || !Controller)
 		return EBTNodeResult::Failed;
 
@@ -25,9 +28,9 @@ EBTNodeResult::Type UBTTask_DeliverFood::ExecuteTask(UBehaviorTreeComponent& Own
 
 	AAntQueen* Queen = Ant->HomeHive->Queen;
 	if (Queen)
-		Queen->ReceiveFood(Ant->GetCarriedFoodAmount());
+		Queen->ReceiveFood(Ant->GetCarriedFoodAmount()); //give cuurent carried food amount to the queen
 
-	Ant->SetCarryingFood(false);
+	Ant->SetCarryingFood(false); //reset flag
 	BB->SetValueAsBool(TEXT("IsCarryingFood"), false);
 
 	return EBTNodeResult::Succeeded;

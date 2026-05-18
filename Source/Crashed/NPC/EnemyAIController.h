@@ -10,6 +10,7 @@ class CRASHED_API AEnemyAIController : public AAIController
 	GENERATED_BODY()
 
 public:
+	//perception values config
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float AISightRadius = 500.f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

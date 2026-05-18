@@ -48,18 +48,19 @@ void ABee::BeginPlay()
 		HealthComponent->OnHealthChanged.AddDynamic(this, &ABee::OnBeeHealthChanged);
 }
 
+
 void ABee::PerformAttack_Implementation()
 {
-	if (!CurrentAttackTarget) return;
+	if (!CurrentAttackTarget) return; //no target guard
 
-	FVector Delta = CurrentAttackTarget->GetActorLocation() - GetActorLocation();
+	FVector Delta = CurrentAttackTarget->GetActorLocation() - GetActorLocation(); //close enough proximity guard
 	Delta.Z = 0.f;
 	if (Delta.SizeSquared() > AttackRange * AttackRange) return;
 
-	if (UHealthComponent* HC = CurrentAttackTarget->FindComponentByClass<UHealthComponent>())
-		HC->ApplyDamageFrom(AttackDamage, this);
+	if (UHealthComponent* HC = CurrentAttackTarget->FindComponentByClass<UHealthComponent>()) //valid health component guard
+		HC->ApplyDamageFrom(AttackDamage, this); //apply damage to target
 
-	HealthComponent->ApplyDamage(HealthComponent->currentHealth);
+	HealthComponent->ApplyDamage(HealthComponent->currentHealth); //dies when attacking
 }
 
 void ABee::Tick(float DeltaTime)
@@ -68,37 +69,40 @@ void ABee::Tick(float DeltaTime)
 	if (bIsDefending) return;
 
 	TArray<AActor*> Overlapping;
-	SeparationSphere->GetOverlappingActors(Overlapping, ABee::StaticClass());
+	SeparationSphere->GetOverlappingActors(Overlapping, ABee::StaticClass());  //allows collection of all nearby bees
 
 	FVector InfluenceVector = FVector::ZeroVector;
 	int32   Count       = 0;
-	for (AActor* Actor : Overlapping)
+	for (AActor* Actor : Overlapping) // loop through all bees within influence sphere
 	{
 		if (Actor == this) continue;
-		InfluenceVector += Actor->GetActorLocation();
+		InfluenceVector += Actor->GetActorLocation(); //set reference location
 		++Count;
 	}
 	if (Count == 0) return;
 
-	const FVector Centroid         = InfluenceVector / (float)Count;
+	const FVector Centroid         = InfluenceVector / (float)Count; //average reference locations to get the local influence vector
 	const FVector AwayFromCentroid = GetActorLocation() - Centroid;
-	if (AwayFromCentroid.IsNearlyZero()) return;
+	if (AwayFromCentroid.IsNearlyZero()) return; //if low value, ignore
 
-	const float Distance = AwayFromCentroid.Size();
-	const float Weight   = FMath::Clamp(1.f - (Distance / SeparationSphereRadius), 0.f, 1.f);
+	const float Distance = AwayFromCentroid.Size(); //convert to useable value
+	const float Weight   = FMath::Clamp(1.f - (Distance / SeparationSphereRadius), 0.f, 1.f); // then apply a weight
 
-	GetCharacterMovement()->Velocity += AwayFromCentroid.GetSafeNormal()
+	GetCharacterMovement()->Velocity += AwayFromCentroid.GetSafeNormal() // add a movement velocity away from the centroid, this should control seperation while not in defend mode
 		* SeparationStrength * Weight * DeltaTime;
 }
 
+//if any bee is damaged, set hive to aggressive
 void ABee::OnBeeHealthChanged(float NewHealth, float MaxHealth)
 {
-	if (NewHealth >= PreviousHealth) { PreviousHealth = NewHealth; return; }
+	if (NewHealth >= PreviousHealth) { PreviousHealth = NewHealth; return; } // only cheks for damaged bees
 	PreviousHealth = NewHealth;
 
+	//find out who attacked the bee last
 	AActor* Attacker = HealthComponent ? HealthComponent->LastInstigator : nullptr;
 	if (!Attacker) return;
 
+	//become aggressive towards the attacker
 	if (OwnerHive.IsValid())
 		OwnerHive->SendBeesToAttack(Attacker);
 }

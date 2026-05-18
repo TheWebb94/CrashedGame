@@ -6,13 +6,15 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Engine/World.h"
 
-ABeeHive::ABeeHive()
+ABeeHive::ABeeHive() //constructor config
 {
     PrimaryActorTick.bCanEverTick = false;
-
+    
+    //set mesh
     HiveMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HiveMesh"));
     RootComponent = HiveMesh;
-
+    
+    //set health component
     HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 }
 
@@ -20,52 +22,62 @@ void ABeeHive::BeginPlay()
 {
     Super::BeginPlay();
 
+    
     if (HealthComponent)
-        HealthComponent->OnHealthChanged.AddDynamic(this, &ABeeHive::OnHiveDamaged);
+        HealthComponent->OnHealthChanged.AddDynamic(this, &ABeeHive::OnHiveDamaged); //bind an event to health changed
 
+    //spawn the initital swarm
     for (int32 i = 0; i < MaxBees; ++i)
         SpawnBee();
 }
 
+///<summary>
+///if the swarm master becomes invalid, promote the next bee in the tracked array to swarm master
+///</summary>
 void ABeeHive::PromoteSwarmMaster()
 {
-    if (SwarmMaster.IsValid()) return;
+    if (SwarmMaster.IsValid()) return;  //check validity
 
-    for (auto& BeePtr : AliveBees)
+    for (auto& BeePtr : AliveBees) 
     {
         if (BeePtr.IsValid())
         {
             SwarmMaster = BeePtr;
-            BeePtr->bIsSwarmMaster = true;
+            BeePtr->bIsSwarmMaster = true; //iterate through bees and promote to master
             return;
         }
     }
 }
 
+///Central method for spawning bees
 void ABeeHive::SpawnBee()
 {
-    if (!BeeClass) return;
+    if (!BeeClass) return; //valid class not set in editor guard
 
-    AliveBees.RemoveAll([](const TWeakObjectPtr<ABee>& P) { return !P.IsValid(); });
-    if (AliveBees.Num() >= MaxBees) return;
+    AliveBees.RemoveAll([](const TWeakObjectPtr<ABee>& P) { return !P.IsValid(); }); //remove all bees that are not valid from the list
+    if (AliveBees.Num() >= MaxBees) return; //if we are at maximum number of bees do nothing
 
+    //find a nearby spawn location
     const float Angle  = FMath::FRandRange(0.f, 2.f * PI);
     const float Radius = FMath::FRandRange(100.f, SpawnRadius);
     
-    // Spawn above hive so flying mode activates before physics settles
+    // setup the location
     const FVector Loc = GetActorLocation()
         + FVector(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, 150.f);
 
+    //setup the collision for safe spawning
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride =
         ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
+    //then spawn the bee
     ABee* NewBee = GetWorld()->SpawnActor<ABee>(BeeClass, Loc, FRotator::ZeroRotator, Params);
-    if (!NewBee) return;
+    if (!NewBee) return; //safety check before continuing
 
+    //then setup values on the spawned bee
     NewBee->OwnerHive = this;
     NewBee->OnEnemyDeath.AddDynamic(this, &ABeeHive::OnBeeDied);
-    AliveBees.Add(NewBee);
+    AliveBees.Add(NewBee); //add to tracking array
     
     // Inherit defend state from swarm master if a fight is already in progress
     if (SwarmMaster.IsValid() && SwarmMaster->bIsDefending && SwarmMaster->CurrentAttackTarget)
@@ -84,9 +96,10 @@ void ABeeHive::SpawnBee()
         }
     }
     
-    PromoteSwarmMaster();
+    PromoteSwarmMaster(); //check the swarm for swarm master and promote one of ot valid
 }
 
+//TODO: add instigator for damage so the real target is knwon -  low priority, in current build no other NPCs target the beehive but could be implemented in the future
 void ABeeHive::OnHiveDamaged(float NewHealth, float MaxHealth)
 {
     // Fall back to the player pawn as the swarm target
@@ -94,23 +107,23 @@ void ABeeHive::OnHiveDamaged(float NewHealth, float MaxHealth)
         ? GetWorld()->GetFirstPlayerController()->GetPawn()
         : nullptr;
 
-    SendBeesToAttack(Target);
+    SendBeesToAttack(Target); //bees store the given target and all attack
 }
 
 void ABeeHive::SendBeesToAttack(AActor* Target)
 {
-    if (!Target) return;
+    if (!Target) return; //if no target, no behaviour
 
-    AliveBees.RemoveAll([](const TWeakObjectPtr<ABee>& P) { return !P.IsValid(); });
+    AliveBees.RemoveAll([](const TWeakObjectPtr<ABee>& P) { return !P.IsValid(); }); //remove invalid bees from array
 
-    for (auto& BeePtr : AliveBees)
+    for (auto& BeePtr : AliveBees) //loop through all bees and set their state to defending, and give them a  target
     {
         if (!BeePtr.IsValid()) continue;
         ABee* Bee = BeePtr.Get();
         Bee->bIsDefending = true;
         Bee->CurrentAttackTarget = Target;
 
-        if (ABeeAIController* AIC = Cast<ABeeAIController>(Bee->GetController()))
+        if (ABeeAIController* AIC = Cast<ABeeAIController>(Bee->GetController())) //set these values in the BB
         {
             if (AIC->BBC)
             {
@@ -133,6 +146,7 @@ void ABeeHive::ResetDefendState()
     // If any bee still has a living target, keep defending and re-check later
     for (auto& BeePtr : AliveBees)
     {
+        //guards + config
         if (!BeePtr.IsValid()) continue;
         AActor* Target = BeePtr->CurrentAttackTarget;
         if (!Target) continue;
@@ -140,8 +154,8 @@ void ABeeHive::ResetDefendState()
         UHealthComponent* HC = Target->FindComponentByClass<UHealthComponent>();
         if (HC && !HC->IsDead())
         {
-            GetWorldTimerManager().SetTimer(DefendResetTimerHandle,
-                this, &ABeeHive::ResetDefendState, DefendDuration, false);
+            //set timer for the reset of defend state
+            GetWorldTimerManager().SetTimer(DefendResetTimerHandle,this, &ABeeHive::ResetDefendState, DefendDuration, false);
             return;
         }
     }
@@ -166,6 +180,7 @@ void ABeeHive::ResetDefendState()
     }
 }
 
+//When a bee dies, remove form tracking array, and add a pending respawn
 void ABeeHive::OnBeeDied(ABaseEnemy* DeadBee)
 {
     AliveBees.RemoveAll([DeadBee](const TWeakObjectPtr<ABee>& P)
@@ -179,6 +194,7 @@ void ABeeHive::OnBeeDied(ABaseEnemy* DeadBee)
         &ABeeHive::TryRespawnBee, BeeRespawnDelay, false);
 }
 
+///if the hive has available space in the swarm (>0 pending respawns) spawn a bee
 void ABeeHive::TryRespawnBee()
 {
     if (PendingRespawns <= 0) return;

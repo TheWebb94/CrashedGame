@@ -5,6 +5,7 @@ AAntHive::AAntHive()
 {
     PrimaryActorTick.bCanEverTick = false;
 
+    //setup mesh component
     HiveMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HiveMesh"));
     RootComponent = HiveMesh;
 }

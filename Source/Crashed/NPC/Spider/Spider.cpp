@@ -9,7 +9,6 @@
 ASpider::ASpider()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
 }
 
 void ASpider::BeginPlay()
@@ -20,6 +19,7 @@ void ASpider::BeginPlay()
 void ASpider::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	//mesh rotation config
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 480.f, 0.f);
 	bUseControllerRotationYaw = false;
@@ -32,23 +32,26 @@ void ASpider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void ASpider::PerformAttack_Implementation()
 {
-	if (!CurrentAttackTarget) return;
+	if (!CurrentAttackTarget) return; //safety check
 	if (UHealthComponent* HC = CurrentAttackTarget->FindComponentByClass<UHealthComponent>())
-		HC->ApplyDamageFrom(AttackDamage, this);
+		HC->ApplyDamageFrom(AttackDamage, this); //apply damage, with method used to track instigator
 }
 
 void ASpider::ShootWebProjectile(AActor* Target)
 {
-	if (!WebProjectileClass || !Target || !bCanRangedAttack) return;
+	if (!WebProjectileClass || !Target || !bCanRangedAttack) return; //safety guard
 
+	//spawn config
 	FVector SpawnLoc = GetActorLocation();
 	FVector Direction = (Target->GetActorLocation() - SpawnLoc).GetSafeNormal();
 	FRotator SpawnRot = Direction.Rotation();
 
+	
 	FActorSpawnParameters Params;
 	Params.Owner   = this;
 	Params.Instigator = GetInstigator();
 
+	//spawn the projectile
 	ASpiderWebProjectile* Projectile = GetWorld()->SpawnActor<ASpiderWebProjectile>(
 		WebProjectileClass, SpawnLoc, SpawnRot, Params);
 
@@ -66,7 +69,7 @@ void ASpider::ShootWebProjectile(AActor* Target)
 
 void ASpider::PlaceDefensiveWeb()
 {
-	if (!DefensiveWebClass) return;
+	if (!DefensiveWebClass) return; //safety guard
 
 	// Place flat on the ground beneath the spider
 	FVector SpawnLoc = GetActorLocation() - FVector(0.f, 0.f, GetCapsuleComponent()
@@ -75,5 +78,5 @@ void ASpider::PlaceDefensiveWeb()
 	FActorSpawnParameters Params;
 	Params.Owner = this;
 
-	GetWorld()->SpawnActor<ADefensiveWeb>(DefensiveWebClass, SpawnLoc, FRotator::ZeroRotator, Params);
+	GetWorld()->SpawnActor<ADefensiveWeb>(DefensiveWebClass, SpawnLoc, FRotator::ZeroRotator, Params); //finally spawn the web
 }

@@ -15,7 +15,7 @@ class CRASHED_API UBTDecorator_HasLineOfSight : public UBTDecorator_BlackboardBa
 	GENERATED_BODY()
 	
 public:
-	UBTDecorator_HasLineOfSight();
+	UBTDecorator_HasLineOfSight(); 
 	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp,	uint8* NodeMemory) const override;
 
 };

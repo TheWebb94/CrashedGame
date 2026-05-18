@@ -35,7 +35,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USphereComponent* PickupRadius;
 
-	//Three mesh stages — assign in the Blueprint defaults
+	//Three mesh stages 
 	UPROPERTY(EditDefaultsOnly, Category = "Food|Meshes")
 	UStaticMesh* MeshWhole;
 
@@ -59,10 +59,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Food|Spawning")
 	float MaxScale = 2.5f;
 
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Food")
-	float DespawnDelay = 5.f;
+	float DespawnDelay = 2.f;
 
-	float decayRate = 0.92f;
+	float decayRate = 0.92f; //rate at which the food decays independently over time
 
 private:
 	bool  bDepleted        = false;

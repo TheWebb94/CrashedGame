@@ -11,8 +11,11 @@ UBTTask_CalcFleeDestination::UBTTask_CalcFleeDestination()
 EBTNodeResult::Type UBTTask_CalcFleeDestination::ExecuteTask(UBehaviorTreeComponent& OwnerComp,
 															   uint8* NodeMemory)
 {
+	//config
 	AAIController* Controller = OwnerComp.GetAIOwner();
 	UBlackboardComponent* BB  = OwnerComp.GetBlackboardComponent();
+	
+	//cast guards
 	if (!Controller || !BB) return EBTNodeResult::Failed;
 
 	APawn* Pawn = Controller->GetPawn();
@@ -26,6 +29,8 @@ EBTNodeResult::Type UBTTask_CalcFleeDestination::ExecuteTask(UBehaviorTreeCompon
 	// Project onto navmesh so MoveTo doesn't fail on geometry
 	UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
 	FNavLocation NavLoc;
+	
+	//set flee point 
 	if (NavSys && NavSys->ProjectPointToNavigation(FleePoint, NavLoc, FVector(50.f, 50.f, 100.f)))
 		BB->SetValueAsVector(TEXT("FleeDestination"), NavLoc.Location);
 	else

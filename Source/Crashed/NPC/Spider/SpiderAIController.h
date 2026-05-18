@@ -54,7 +54,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility|Weights")
     float RetreatWeight = 1.5f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Utility") //sets how often the unit evaluates its state. This number will affect sim performance a fair amount the lower it gets
     float DecisionInterval = 0.25f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Patrol")

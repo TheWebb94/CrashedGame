@@ -18,8 +18,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spider|Patrol")
 	AWaypoint* NextWayPoint;
-
-	// Blueprint should assign these to the matching child classes
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spider|Combat")
 	TSubclassOf<ASpiderWebProjectile> WebProjectileClass;
 

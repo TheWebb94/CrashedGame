@@ -14,9 +14,11 @@ void UBTService_DetectPlayer::TickNode(UBehaviorTreeComponent& OwnerComp,
                                         uint8* NodeMemory, float DeltaSeconds)
 {
     Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
-
+    //config
     AAIController* Controller = OwnerComp.GetAIOwner();
     UBlackboardComponent* BB  = OwnerComp.GetBlackboardComponent();
+    
+    //cast guards
     if (!Controller || !BB) return;
 
     APawn* Pawn = Controller->GetPawn();
@@ -28,6 +30,7 @@ void UBTService_DetectPlayer::TickNode(UBehaviorTreeComponent& OwnerComp,
     AActor* ClosestThreat   = nullptr;
     float   ClosestDistSq   = FLT_MAX;
 
+    
     for (const TSubclassOf<AActor>& ThreatClass : ThreatClasses)
     {
         if (!ThreatClass) continue;
@@ -35,10 +38,12 @@ void UBTService_DetectPlayer::TickNode(UBehaviorTreeComponent& OwnerComp,
         TArray<AActor*> Found;
         UGameplayStatics::GetAllActorsOfClass(GetWorld(), ThreatClass, Found);
 
-        for (AActor* Actor : Found)
+        for (AActor* Actor : Found) //for each actor that matches a vlue in threat class array
         {
+            //cast guard
             if (!Actor || Actor == Pawn) continue;
 
+            //check dist of all found valid actords, find the smalles dist
             const float DistSq = FVector::DistSquared(PawnLoc, Actor->GetActorLocation());
             if (DistSq < ClosestDistSq)
             {
@@ -48,20 +53,21 @@ void UBTService_DetectPlayer::TickNode(UBehaviorTreeComponent& OwnerComp,
         }
     }
 
+    //if the player is near mark flag
     const bool bCurrentlyFleeing = BB->GetValueAsBool(TEXT("IsPlayerNear"));
 
+    //if there is a vliad threat nearby, try and flee
     if (!bCurrentlyFleeing && ClosestThreat && ClosestDistSq <= FleeRadius * FleeRadius)
     {
         BB->SetValueAsBool(TEXT("IsPlayerNear"), true);
         BB->SetValueAsVector(TEXT("ThreatLocation"), ClosestThreat->GetActorLocation());
-    }
+    } //if alreeady fleeing, check until the player is outside flee radius - here we set the playernear to false 
     else if (bCurrentlyFleeing && ClosestDistSq > SafeRadius * SafeRadius)
     {
         BB->SetValueAsBool(TEXT("IsPlayerNear"), false);
-    }
-    else if (bCurrentlyFleeing && ClosestThreat)
+    } 
+    else if (bCurrentlyFleeing && ClosestThreat) // Keep threat location pointed at the closest threat while still fleeing
     {
-        // Keep threat location pointed at the closest threat while still fleeing
         BB->SetValueAsVector(TEXT("ThreatLocation"), ClosestThreat->GetActorLocation());
     }
 }

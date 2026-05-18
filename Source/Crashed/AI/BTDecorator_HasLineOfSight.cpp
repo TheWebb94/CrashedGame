@@ -6,13 +6,16 @@
 #include "Crashed/NPC/BaseEnemy.h"
 #include "BTTask_GetPathPoints.h"
 
+
 UBTDecorator_HasLineOfSight::UBTDecorator_HasLineOfSight()
 {
 	NodeName = "hasLineOfSight";
 	bCreateNodeInstance = true;
-
 }
 
+///<summary>
+///Checks owner blackboard values to determine the pawn has line of sight to a target
+///</summary>
 bool UBTDecorator_HasLineOfSight::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
 {
 	//check if AIController or Blackboard exist in the AI Character

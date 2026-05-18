@@ -22,7 +22,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Healing")
 	float HealRate = 1.f;
 
-	// Must be within this distance to heal (should match MoveTo AcceptRadius)
+	// Must be within this distance to heal 
 	UPROPERTY(EditAnywhere, Category = "Healing")
 	float HealRange = 200.f;
 

@@ -11,26 +11,29 @@
 // Sets default values
 AWaypoint::AWaypoint()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	
+	//setup root component
 	Root = CreateDefaultSubobject <USceneComponent>("Root");
 	SetRootComponent(Root);
+	
+	//Add box component
 	Box = CreateDefaultSubobject<UBoxComponent>("Box");
 	Box->SetupAttachment(GetRootComponent());
-	Box->OnComponentBeginOverlap.AddDynamic(this, &AWaypoint::OnCharacterEnter);
+	Box->OnComponentBeginOverlap.AddDynamic(this, &AWaypoint::OnCharacterEnter); //bind event to it
 }
 
-void AWaypoint::OnCharacterEnter(UPrimitiveComponent* OverlapComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+//When character enters 
+void AWaypoint::OnCharacterEnter(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ASpider* Spider = nullptr;
 	
-	if (OtherActor != nullptr)
+	if (OtherActor != nullptr) //safety guard
 	{
 		Spider = Cast<ASpider>(OtherActor);
-		if (Spider != nullptr)
+		if (Spider != nullptr) //guard
 		{
-			Spider->NextWayPoint = NextWayPoint;
+			Spider->NextWayPoint = NextWayPoint; //sets the next waypoint
 		}
 	}
 }

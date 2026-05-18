@@ -16,37 +16,42 @@ void UBTService_FindNearbyInjuredAlly::TickNode(UBehaviorTreeComponent& OwnerCom
 {
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 
+	//config
 	AAIController* Controller = OwnerComp.GetAIOwner();
 	UBlackboardComponent* BB  = OwnerComp.GetBlackboardComponent();
 	if (!Controller || !BB) return;
 
+	//cast guards
 	APawn* Self = Controller->GetPawn();
 	if (!Self) return;
 
+	//create array of all alive ants
 	TArray<AActor*> AllAnts;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AForestAnt::StaticClass(), AllAnts);
-
+	
 	AForestAnt* BestTarget    = nullptr;
 	float        LowestHealth = HealthThreshold;
 
+	//loop through all ants 
 	for (AActor* Actor : AllAnts)
 	{
 		AForestAnt* Ant = Cast<AForestAnt>(Actor);
-		if (!Ant || Ant == Self) continue;
-		if (FVector::Dist(Self->GetActorLocation(), Ant->GetActorLocation()) > ScanRadius) continue;
+		if (!Ant || Ant == Self) continue; //cast guard
+		if (FVector::Dist(Self->GetActorLocation(), Ant->GetActorLocation()) > ScanRadius) continue; //if they are close enough
 
 		UHealthComponent* HC = Ant->HealthComponent;
 		if (!HC) continue;
 
+		//check their health percentage
 		const float Pct = HC->GetHealthPercent();
 		if (Pct < LowestHealth)
 		{
-			LowestHealth = Pct;
-			BestTarget   = Ant;
+			LowestHealth = Pct; 
+			BestTarget   = Ant; //then store the lowest health ant as the highest priority target
 		}
 	}
 
-	if (BestTarget)
+	if (BestTarget) //assign evaluated value
 	{
 		BB->SetValueAsObject(TEXT("HealTarget"), BestTarget);
 		BB->SetValueAsBool(TEXT("HasHealTarget"), true);

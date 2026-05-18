@@ -29,58 +29,54 @@ public:
     
     UBehaviorTree* GetBehaviorTree() const { return BehaviorTreeAsset; }
 
-    // --- Components ---
+    //components
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     UHealthComponent* HealthComponent;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     UStaticMeshComponent* BaseMesh;
 
-    // --- Stats (set per-type in Blueprint defaults) ---
+    //stats 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")
     float MoveSpeed = 300.f;
 
-    // Distance at which the AIController starts tracking the player
+    //distance at which the AIController starts tracking the player
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")
     float DetectionRadius = 1500.f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")
     float AttackRange = 150.f;
 
-    // Used when dealing damage directly without a weapon actor
+    //used when dealing damage directly without a weapon actor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")
     float AttackDamage = 20.f;
 
-    // Attacks per second
+    //attacks per second
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")
     float AttackRate = 1.f;
 
-    // --- Optional weapon slot (same system as APlayerCharacter) ---
+    //TODO: this is not in use, cleanup or implement units that use the weapon system
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Combat")
     TSubclassOf<ABaseWeapon> WeaponClass;
-
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|Combat")
     ABaseWeapon* EquippedWeapon = nullptr;
 
-    // --- Behavior Tree ---
-    // Assign this in the child Blueprint — EnemyAIController runs it on possess
+    //behaviour tree assigned this in the child blueprint — EnemyAIController runs it on possess
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy|AI")
     UBehaviorTree* BehaviorTreeAsset;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     class APatrolPath* PatrolPath;
-
     
-    // --- Delegate ---
+    //delegate - callable in BP
     UPROPERTY(BlueprintAssignable, Category = "Enemy|Events")
     FOnEnemyDeath OnEnemyDeath;
 
     UFUNCTION(BlueprintCallable, Category = "Enemy")
     UHealthComponent* GetHealthComponent() const { return HealthComponent; }
 
-    // Called from BT Tasks to trigger this enemy's attack.
-    // C++ children: override PerformAttack_Implementation().
-    // Blueprint children: override the "PerformAttack" event node.
+    //called from BT Tasks to trigger this enemy's attack.
+    //C++ children override PerformAttack_Implementation().
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Enemy|Combat")
     void PerformAttack();
     virtual void PerformAttack_Implementation();
@@ -89,19 +85,19 @@ public:
     AActor* CurrentAttackTarget = nullptr;
 
 protected:
-    // Bound to HealthComponent->OnDeath in BeginPlay.
-    // Override to play a death animation or drop loot before destroying.
+    //bound to HealthComponent->OnDeath in BeginPlay.
+    //override to play a death animation or drop loot before destroying.
     UFUNCTION(BlueprintNativeEvent, Category = "Enemy|Events")
     void OnDeath();
     
     UFUNCTION()
     virtual void OnDeath_Implementation();
 
-    // Rotates BaseMesh to face the movement direction each tick
+    //rotates BaseMesh to face the movement direction each tick
     virtual void RotateBase(float DeltaTime);
 
     UPROPERTY(EditDefaultsOnly, Category = "Enemy|Movement")
-    float BaseRotationSpeed = 8.f;
+    float BaseRotationSpeed = 8.f; //rate of rotation towards movement vector
 
 private:
     FVector LastMoveDirection;

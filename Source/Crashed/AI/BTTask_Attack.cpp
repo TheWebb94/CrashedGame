@@ -8,30 +8,36 @@
 UBTTask_Attack::UBTTask_Attack()
 {
 	NodeName = TEXT("Attack");
-	bCreateNodeInstance = true;
+	bCreateNodeInstance = true; //all units should have their own evaluation of thios task
 }
 
 EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	//config
 	AAIController* Controller = OwnerComp.GetAIOwner();
 	if (!Controller) return EBTNodeResult::Failed;
-
 	ABaseEnemy* Enemy = Cast<ABaseEnemy>(Controller->GetPawn());
+	
+	//cast guards
 	if (!Enemy) return EBTNodeResult::Failed;
 
 	if (UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent())
 		Enemy->CurrentAttackTarget = Cast<AActor>(BB->GetValueAsObject(FName("TargetActor")));
 
+	//perform an attack on the enemy
 	Enemy->PerformAttack();
 
+	//initialise delay between attacks
 	const float Delay = (Enemy->AttackRate > 0.f) ? (1.f / Enemy->AttackRate) : 1.f;
 	CachedOwnerComp = &OwnerComp;
 
+	//set timer
 	Enemy->GetWorldTimerManager().SetTimer(AttackTimerHandle, [this]()
 	{
 		if (CachedOwnerComp)
 		{
 			if (AAIController* C = CachedOwnerComp->GetAIOwner())
+				//if target is not valid, exit leaf
 				if (ABaseEnemy* E = Cast<ABaseEnemy>(C->GetPawn()))
 					E->CurrentAttackTarget = nullptr;
 
@@ -45,9 +51,12 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 
 EBTNodeResult::Type UBTTask_Attack::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	//config
 	if (AAIController* Controller = OwnerComp.GetAIOwner())
+		//cast guard
 		if (ABaseEnemy* Enemy = Cast<ABaseEnemy>(Controller->GetPawn()))
 		{
+			//when aborting this node, clear attack timer and target ptr
 			Enemy->GetWorldTimerManager().ClearTimer(AttackTimerHandle);
 			Enemy->CurrentAttackTarget = nullptr;
 		}

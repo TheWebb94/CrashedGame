@@ -39,16 +39,16 @@ private:
 	TSubclassOf<AFood> FoodClass;
 
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
-	float SpawnRadius = 500.f;
+	float SpawnRadius = 500.f; //how far away we can spawn food
 
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
-	float minSpawnRadius = 150.f;
+	float minSpawnRadius = 150.f; //closest dist to spawn food (prevents spawning inside trunk)
 
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
 	int32 MaxFoodCount = 5;
 
 	UPROPERTY(EditAnywhere, Category = "Food Spawner")
-	float SpawnInterval = 15.f;
+	float SpawnInterval = 15.f; //seconds per respawn food timer
 
 	// If true, bIsPollinated must be true before RefreshFood will spawn food
 	UPROPERTY(EditAnywhere, Category = "Food Spawner|Pollination")

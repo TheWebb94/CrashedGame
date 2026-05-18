@@ -17,8 +17,11 @@ void UBTService_FindNearbyFood::TickNode(UBehaviorTreeComponent& OwnerComp,
 {
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 
+	//config
 	AAIController* Controller = OwnerComp.GetAIOwner();
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
+	
+	//cast guards
 	if (!Controller || !BB)
 		return;
 
@@ -26,29 +29,31 @@ void UBTService_FindNearbyFood::TickNode(UBehaviorTreeComponent& OwnerComp,
 	if (!Pawn)
 		return;
 
-	
+	//create a list of all food items spawned in game
 	TArray<AActor*> AllFood;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFood::StaticClass(), AllFood);
 
+	
 	AFood* Closest = nullptr;
 	float ClosestDistSq = ScanRadius * ScanRadius;   
 	const FVector PawnLoc = Pawn->GetActorLocation();
 
+	//loop through to find the nearest valid food
 	for (AActor* Actor : AllFood)
 	{
 		AFood* Food = Cast<AFood>(Actor);
-		if (!Food || !Food->IsAvailable())
+		if (!Food || !Food->IsAvailable()) //cast guard
 			continue;
 
 		const float DistSq = FVector::DistSquared(PawnLoc, Food->GetActorLocation());
-		if (DistSq < ClosestDistSq)
+		if (DistSq < ClosestDistSq) //cast guard
 		{
 			ClosestDistSq = DistSq;
-			Closest = Food;
+			Closest = Food; //if this is the closest of evaluated options, set to closest
 		}
 	}
 
-	if (Closest)
+	if (Closest) //if valid food found, closest is set tot target
 	{
 		BB->SetValueAsObject(TEXT("FoodTarget"), Closest);
 		BB->SetValueAsBool(TEXT("HasFoodTarget"), true);

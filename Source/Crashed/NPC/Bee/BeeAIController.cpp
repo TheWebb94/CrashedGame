@@ -5,10 +5,10 @@
 
 ABeeAIController::ABeeAIController()
 {
-	// Wider perception for flying units
+	//config
 	AISightRadius    = 800.f;
 	AILoseSightRadius = 850.f;
-	AIFieldOfView    = 180.f;
+	AIFieldOfView    = 180.f; //high FOV from bees, because its a swarm of bees
 
 	// Reconfigure sight with updated values
 	if (SightConfig)
