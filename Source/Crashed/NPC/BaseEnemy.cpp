@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Crashed/HealthComponent.h"
+#include "Crashed/Player/PlayerCharacter.h"
 #include "Crashed/Weapons/BaseWeapon.h"
 #include "Engine/World.h"
 
@@ -82,6 +83,12 @@ void ABaseEnemy::PerformAttack_Implementation()
 //on death broadcast the death and cleanup actor
 void ABaseEnemy::OnDeath_Implementation()
 {
+    if (HealthComponent && HealthComponent->LastInstigator)
+    {
+        if (APlayerCharacter* Player = Cast<APlayerCharacter>(HealthComponent->LastInstigator))
+            Player->AddScore(ScoreValue);
+    }
+
     OnEnemyDeath.Broadcast(this);
     Destroy();
 }

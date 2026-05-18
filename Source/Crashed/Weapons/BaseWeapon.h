@@ -3,6 +3,14 @@
 #include "GameFramework/Actor.h"
 #include "BaseWeapon.generated.h"
 
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	MachineGun  UMETA(DisplayName = "Machine Gun"),
+	Rocket      UMETA(DisplayName = "Rocket"),
+	Gauss       UMETA(DisplayName = "Gauss")
+};
+
 UCLASS(Abstract)
 class CRASHED_API ABaseWeapon : public AActor
 {
@@ -20,11 +28,17 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Display")
 	float MeshYawOffset = 0.f;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Display")
+	EWeaponType WeaponType = EWeaponType::MachineGun;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Display")
 	float MeshRollOffset = 0.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Display")
 	FVector MeshScale = FVector(1.f, 1.f, 1.f);
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Display")
+	UTexture2D* WeaponIcon = nullptr;
 
 	// Whether holding Fire continuously shoots
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")

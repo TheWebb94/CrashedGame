@@ -7,7 +7,7 @@
 
 
 class ABaseWeapon;
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponChanged, ABaseWeapon*, NewWeapon);
 
 UCLASS()
 class CRASHED_API APlayerCharacter : public ACharacter
@@ -23,6 +23,23 @@ protected:
 public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
     class UHealthComponent* HealthComponent;
+    
+    
+
+    UPROPERTY(BlueprintAssignable, Category = "Combat")
+    FOnWeaponChanged OnWeaponChanged;
+    
+    UPROPERTY(EditAnywhere, Category = "Score")
+    int32 Score = 0;
+
+    UFUNCTION(BlueprintCallable, Category = "Score") //getter
+    int32 GetScore() { return Score; }
+    
+    UFUNCTION(BlueprintCallable, Category = "Score") //setter
+    void SetScore(int32 amount) { Score = amount; }
+    
+    UFUNCTION(BlueprintCallable, Category = "Score") //adder
+    void AddScore(int32 Points) { Score += Points; }
     
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

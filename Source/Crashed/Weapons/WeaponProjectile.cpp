@@ -95,8 +95,8 @@ void AWeaponProjectile::Tick(float DeltaTime)
 	if (GetInstigator()) ActorsToIgnore.Add(GetInstigator());	//and owner
 
 	UKismetSystemLibrary::SphereOverlapActors(
-		GetWorld(), Start, CollisionComp->GetScaledSphereRadius(),
-		ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
+	GetWorld(), Start, 150.f,
+	ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
 
 	for (AActor* Actor : OverlappedActors) //if hitting a valid actor, apply damage correctly
 	{

@@ -54,6 +54,10 @@ public:
     //attacks per second
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")
     float AttackRate = 1.f;
+    
+    //Score value
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Stats")
+    int32 ScoreValue = 100;
 
     //TODO: this is not in use, cleanup or implement units that use the weapon system
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Combat")

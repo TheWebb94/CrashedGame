@@ -26,14 +26,19 @@ void AHitscanWeapon::Fire(const FVector& Origin, const FVector& AimPoint)
 	Params.AddIgnoredActor(GetOwner());
 
 	//raytrace params
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(
+	FCollisionObjectQueryParams ObjectQuery;
+	ObjectQuery.AddObjectTypesToQuery(ECC_WorldStatic);
+	ObjectQuery.AddObjectTypesToQuery(ECC_WorldDynamic);
+	ObjectQuery.AddObjectTypesToQuery(ECC_Pawn);
+	const bool bHit = GetWorld()->SweepSingleByObjectType(
 		Hit,
 		Origin,
 		End,
-		ECC_Visibility,
+		FQuat::Identity,
+		ObjectQuery,
+		FCollisionShape::MakeSphere(80.f),
 		Params
 	);
-
 	const FVector BeamEnd = bHit ? Hit.ImpactPoint : End; //determine hit result
 
 	if (bHit) //on hit access health component and deal damage
@@ -42,7 +47,10 @@ void AHitscanWeapon::Fire(const FVector& Origin, const FVector& AimPoint)
 		{
 			if (UHealthComponent* HealthComp = HitActor->FindComponentByClass<UHealthComponent>())
 			{
-				HealthComp->ApplyDamage(Damage);
+				APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+				APawn* ControlledPawn = PlayerController->GetPawn();
+				
+				HealthComp->ApplyDamageFrom(Damage, ControlledPawn); //apply damage from player
 			}
 		}
 	}

@@ -122,7 +122,9 @@ void APlayerCharacter::SwitchWeapon(int32 Index)
 
     CurrentWeaponIndex = Index;
     EquippedWeapon = SpawnedWeapons[Index]; //sets weapon
-
+    
+    OnWeaponChanged.Broadcast(EquippedWeapon); //event dispatcher so HUD can bind to this function
+    
     UStaticMesh* NewMesh = EquippedWeapon->GetWeaponStaticMesh(); //applies mesh change to player
     if (NewMesh)
     {

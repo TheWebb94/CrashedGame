@@ -104,11 +104,15 @@ void AForestAnt::OnWorkerHealthChanged(float NewHealth, float MaxHealth)
     PreviousHealth = NewHealth;
 }
 
-//TODO: looks like any aggressor to the colony will try and set the player as the attack target, this is due to instigator of damage not being supported in the healthcomponent originally
+//alerts nearby soldiers of what unit hurt it
 void AForestAnt::AlertNearbyThreat()
 {
     if (!Queen.IsValid()) return;
-    APawn* Attacker = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+
+    AActor* Attacker = (HealthComponent && HealthComponent->LastInstigator) //fetch last aggressor from health component
+        ? HealthComponent->LastInstigator
+        : UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+
     Queen->AlertSoldiersNearby(GetActorLocation(), Attacker, WorkerAlertRadius);
 }
 

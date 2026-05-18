@@ -99,7 +99,7 @@ void ABeeHive::SpawnBee()
     PromoteSwarmMaster(); //check the swarm for swarm master and promote one of ot valid
 }
 
-//TODO: add instigator for damage so the real target is knwon -  low priority, in current build no other NPCs target the beehive but could be implemented in the future
+//TODO: add instigator for damage so the real target is known -  low priority, in current build no other NPCs target the beehive but could be implemented in the future
 void ABeeHive::OnHiveDamaged(float NewHealth, float MaxHealth)
 {
     // Fall back to the player pawn as the swarm target
