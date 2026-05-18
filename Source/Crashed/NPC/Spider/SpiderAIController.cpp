@@ -85,7 +85,7 @@ float ASpiderAIController::CalculateRiskScore() const
     for (AActor* A : FoundQueens)
     {
         if (FVector::Dist(Origin, A->GetActorLocation()) <= ThreatScanRadius)
-            Risk += 0.5f; //worth 0.5 risk
+            Risk += 0.3f; //worth 0.3 risk
     }
 
     //summates the bees contribution to risk score
