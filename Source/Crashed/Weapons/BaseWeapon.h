@@ -16,6 +16,7 @@ public:
 		return WeaponMesh ? WeaponMesh->GetStaticMesh() : nullptr;
 	}
 	
+	//properties for displaying the weapons at different orientations
 	UPROPERTY(EditDefaultsOnly, Category = "Display")
 	float MeshYawOffset = 0.f;
 	

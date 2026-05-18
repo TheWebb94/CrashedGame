@@ -10,7 +10,7 @@ class CRASHED_API AGaussWeapon : public AHitscanWeapon
 public:
 	AGaussWeapon()
 	{
-		bAutoFire = false;
+		bAutoFire = false; //whether the weapon continues firing on mouse hold down
 		FireRate  = 2.f;
 	}
 };

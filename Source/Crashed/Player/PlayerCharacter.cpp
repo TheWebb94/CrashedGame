@@ -21,6 +21,7 @@ APlayerCharacter::APlayerCharacter()
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 
+    //setup the spring arm for the camera attachment
     SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
     SpringArm->SetupAttachment(RootComponent);
     SpringArm->TargetArmLength = 1200.0f;
@@ -30,6 +31,7 @@ APlayerCharacter::APlayerCharacter()
     SpringArm->bInheritYaw = false;
     SpringArm->bInheritRoll = false;
 
+    //add the camera to the spring arm
     CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     CameraComponent->SetupAttachment(SpringArm);
 
@@ -44,6 +46,7 @@ APlayerCharacter::APlayerCharacter()
     LastMoveDirection = FVector::ForwardVector;
     PlayerControllerRef = nullptr;
     
+    //setup health component attachment
     HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 }
 
@@ -56,7 +59,7 @@ void APlayerCharacter::BeginPlay()
     {
         
         FVector SpawnLocation = FVector(0,0,-3000.0f); // spawns these weapons below map (im sure theres a better way to do this...)
-        if (!WeaponClass) continue;
+        if (!WeaponClass) continue;                                 // weapons were not working without them being spawned in the level?
         FActorSpawnParameters Params;
         Params.Owner = this;
         Params.Instigator = this;
@@ -81,17 +84,19 @@ void APlayerCharacter::Tick(float DeltaTime)
         LastMoveDirection = Velocity.GetSafeNormal();
     }
 
+    //rotate base towards movement vector, rotate turret towards vector(dire frokm player to mouse location)
     RotateBase(DeltaTime);
     RotateTurret(DeltaTime);
 }
 
+//for firing of equipped weapon
 void APlayerCharacter::StartFire()
 {
-    if (!EquippedWeapon) return;
+    if (!EquippedWeapon) return; //safety guard
     bIsFiring = true; 
-    Fire();  
+    Fire();  //trigger equipped weapon specific fire behaviour
 
-    if (EquippedWeapon->bAutoFire)
+    if (EquippedWeapon->bAutoFire) //if full auto, refire at fire rate until mouse unclicked
     {
         const float Interval = 1.f / FMath::Max(EquippedWeapon->FireRate, 0.01f);
         GetWorldTimerManager().SetTimer(
@@ -99,6 +104,7 @@ void APlayerCharacter::StartFire()
     }
 }
 
+//safe management of stopping the firing 
 void APlayerCharacter::StopFire()
 {
     bIsFiring = false;
@@ -106,17 +112,18 @@ void APlayerCharacter::StopFire()
     FireTimerHandle.Invalidate(); //fixes bug where timer was invalidated upon switching weapons and clearing timerhandle
 }
 
+//returns index of weapon list to set the equipped weapon to - called with mousewheel or numkeys
 void APlayerCharacter::SwitchWeapon(int32 Index)
 {
     if (!SpawnedWeapons.IsValidIndex(Index)) return;
 
-    const bool bWasFiring = bIsFiring; 
+    const bool bWasFiring = bIsFiring; //cancels any active firing
     StopFire();
 
     CurrentWeaponIndex = Index;
-    EquippedWeapon = SpawnedWeapons[Index];
+    EquippedWeapon = SpawnedWeapons[Index]; //sets weapon
 
-    UStaticMesh* NewMesh = EquippedWeapon->GetWeaponStaticMesh();
+    UStaticMesh* NewMesh = EquippedWeapon->GetWeaponStaticMesh(); //applies mesh change to player
     if (NewMesh)
     {
         TurretMesh->SetStaticMesh(NewMesh);
@@ -124,9 +131,10 @@ void APlayerCharacter::SwitchWeapon(int32 Index)
     }
         
     if (bWasFiring)   
-        StartFire();
+        StartFire(); //if was firing, restart firing now new weapon is attached
 }
 
+//rotate base towards movement dir
 void APlayerCharacter::RotateBase(float DeltaTime)
 {
     const FRotator TargetRotation = LastMoveDirection.Rotation();
@@ -135,6 +143,7 @@ void APlayerCharacter::RotateBase(float DeltaTime)
     BaseMesh->SetWorldRotation(NewRotation);
 }
 
+//gets the location of the mouse, and makes turret rotate to face that direction
 void APlayerCharacter::RotateTurret(float DeltaTime)
 {
     FVector AimPoint;
@@ -160,6 +169,9 @@ void APlayerCharacter::RotateTurret(float DeltaTime)
     TurretMesh->SetWorldRotation(NewRotation);
 }
 
+///<summary>
+///sets up the input actions so they can be controlled centrally
+///</summary>
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -177,7 +189,6 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
     PlayerInputComponent->BindAction("Weapon1",     IE_Pressed, this, &APlayerCharacter::SelectWeapon1);
     PlayerInputComponent->BindAction("Weapon2",     IE_Pressed, this, &APlayerCharacter::SelectWeapon2);
     PlayerInputComponent->BindAction("Weapon3",     IE_Pressed, this, &APlayerCharacter::SelectWeapon3);
-    PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &APlayerCharacter::Dash);
 }
 
 void APlayerCharacter::NextWeapon()   { SwitchWeapon((CurrentWeaponIndex + 1) % FMath::Max(SpawnedWeapons.Num(), 1)); }
@@ -186,6 +197,7 @@ void APlayerCharacter::SelectWeapon1(){ SwitchWeapon(0); }
 void APlayerCharacter::SelectWeapon2(){ SwitchWeapon(1); }
 void APlayerCharacter::SelectWeapon3(){ SwitchWeapon(2); }
 
+//move forwards/backwards implementaiton
 void APlayerCharacter::MoveForward(float Value)
 {
     if (Value != 0.f)
@@ -194,6 +206,7 @@ void APlayerCharacter::MoveForward(float Value)
     }
 }
 
+//move left/right implementaiton
 void APlayerCharacter::MoveRight(float Value)
 {
     if (Value != 0.f)
@@ -202,54 +215,52 @@ void APlayerCharacter::MoveRight(float Value)
     }
 }
 
+
 bool APlayerCharacter::GetMouseAimPoint(FVector& OutAimPoint) const
 {
-    if (!PlayerControllerRef)
+    if (!PlayerControllerRef) //safety guard
     {
         return false;
     }
 
     FHitResult HitResult;
-    const bool bHit = PlayerControllerRef->GetHitResultUnderCursorByChannel(
-        UEngineTypes::ConvertToTraceType(ECC_Visibility),
-        true,
-        HitResult
-    );
+    //get mouse location
+    const bool bHit = PlayerControllerRef->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility),true,HitResult);
 
     if (bHit)
     {
-        OutAimPoint = HitResult.ImpactPoint;
+        OutAimPoint = HitResult.ImpactPoint; //collect aim point
         return true;
     }
 
     return false;
 }
 
+//sprint implementation
 void APlayerCharacter::StartSprint()
 {
     GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
 }
 
+//on sprint eend implementation
 void APlayerCharacter::StopSprint()
 {
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
+//Fire methoid, has different fuinctioanilty depending on the equipped weapon
 void APlayerCharacter::Fire()
 {
-    if (!EquippedWeapon) return;
+    if (!EquippedWeapon) return; //safety guard
     
-    const float MinInterval = 1.f / FMath::Max(EquippedWeapon->FireRate, 0.01f);
+    const float MinInterval = 1.f / FMath::Max(EquippedWeapon->FireRate, 0.01f); //check fire rate
     const float Now = GetWorld()->GetTimeSeconds();
-    if (Now - LastFireTime < MinInterval) return;
-    LastFireTime = Now;
+    if (Now - LastFireTime < MinInterval) return; //if fired too recently cant fire again
+    LastFireTime = Now; //otherwise reset timer
 
     FVector AimPoint;
     if (!GetMouseAimPoint(AimPoint)) return;
 
-    EquippedWeapon->Fire(GetActorLocation(), AimPoint);
+    EquippedWeapon->Fire(GetActorLocation(), AimPoint); //then fire towards cursor location
 }
 
-void APlayerCharacter::Dash()
-{
-}

@@ -15,26 +15,28 @@ AWeaponProjectile::AWeaponProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	//setup sphere component on obj
 	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
 	CollisionComp->InitSphereRadius(16.f);
 	CollisionComp->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 	RootComponent = CollisionComp;
 
+	//setup mesh on obj
 	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));
 	ProjectileMesh->SetupAttachment(RootComponent);
 	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
 	ProjectileMesh->SetRelativeScale3D(FVector(MeshScale));
-	
 	CollisionComp->SetNotifyRigidBodyCollision(true);
 }
 
 void AWeaponProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+	//ensure scale is set correctly
 	ProjectileMesh->SetRelativeScale3D(FVector(MeshScale));
-	CollisionComp->OnComponentHit.AddDynamic(this, &AWeaponProjectile::OnHit);
+	CollisionComp->OnComponentHit.AddDynamic(this, &AWeaponProjectile::OnHit); //bind hit event to component overlap
 
+	//ignore self/owner collision when firing projecile
 	if (AActor* OwnerActor = GetOwner())
 	{
 		CollisionComp->IgnoreActorWhenMoving(OwnerActor, true);
@@ -46,25 +48,27 @@ void AWeaponProjectile::BeginPlay()
 	}
 }
 
-
+//event bound to overlapped actors on projectile
 void AWeaponProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (!bLaunched) return;
+	//safety guards
+	if (!bLaunched) return; 
 	if (!OtherActor || OtherActor == GetOwner() || OtherActor == GetInstigator()) return;
 
+	//access health component
 	UHealthComponent* HealthComp = OtherActor->FindComponentByClass<UHealthComponent>();
 	if (HealthComp)
 	{
 		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 		APawn* ControlledPawn = PlayerController->GetPawn();
-		HealthComp->ApplyDamageFrom(Damage, ControlledPawn);
+		HealthComp->ApplyDamageFrom(Damage, ControlledPawn); //apply damage with instigator info
 	}
 
-	Destroy();
+	Destroy(); //destroy projectile once target hit
 }
 
-
+//reconfigure variables for fired projectile, allows safety checks
 void AWeaponProjectile::Launch(const FVector& InDirection, float InTravelDistance)
 {
 	Direction = InDirection.GetSafeNormal();
@@ -82,19 +86,19 @@ void AWeaponProjectile::Tick(float DeltaTime)
 	const float   StepDistance = Speed * DeltaTime;
 	const FVector End          = Start + Direction * StepDistance;
 
-	// Explicit pawn sweep — catches NPCs whose capsule collision profile doesn't reliably trigger OnComponentHit via the blocking sweep below.
+	//explicit local sweep to ensure any valid targets are hit
 	TArray<AActor*> OverlappedActors;
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 	TArray<AActor*> ActorsToIgnore = { this };
-	if (GetOwner())     ActorsToIgnore.Add(GetOwner());
-	if (GetInstigator()) ActorsToIgnore.Add(GetInstigator());
+	if (GetOwner())     ActorsToIgnore.Add(GetOwner());		//ignoring self
+	if (GetInstigator()) ActorsToIgnore.Add(GetInstigator());	//and owner
 
 	UKismetSystemLibrary::SphereOverlapActors(
 		GetWorld(), Start, CollisionComp->GetScaledSphereRadius(),
 		ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
 
-	for (AActor* Actor : OverlappedActors)
+	for (AActor* Actor : OverlappedActors) //if hitting a valid actor, apply damage correctly
 	{
 		UHealthComponent* HC = Actor->FindComponentByClass<UHealthComponent>();
 		if (HC)
@@ -110,7 +114,7 @@ void AWeaponProjectile::Tick(float DeltaTime)
 	SetActorLocation(End, true);
 	DistanceTraveled += StepDistance;
 
-	if (DistanceTraveled >= TravelDistance)
+	if (DistanceTraveled >= TravelDistance) //explode when reaching maximum range
 		Explode();
 }
 
@@ -132,23 +136,20 @@ void AWeaponProjectile::Explode()
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
 	//ActorsToIgnore.Add(Player);
-
-	
-	
 	
 	//Gets a list of actors that overlap with explosion raidus
 	UKismetSystemLibrary::SphereOverlapActors(
 		GetWorld(), Center, ExplosionRadius, ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
 
-	for (AActor* Actor : OverlappedActors)
+	for (AActor* Actor : OverlappedActors) //get all overlapping actors
 	{
-		UHealthComponent* targetHealthComponent = Actor->FindComponentByClass<UHealthComponent>();
-		if (targetHealthComponent)
+		UHealthComponent* targetHealthComponent = Actor->FindComponentByClass<UHealthComponent>(); //access health component
+		if (targetHealthComponent)	//safety check
 		{
 			APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 			APawn* ControlledPawn = PlayerController->GetPawn();
 			
-			targetHealthComponent->ApplyDamageFrom(Damage, ControlledPawn);
+			targetHealthComponent->ApplyDamageFrom(Damage, ControlledPawn); //apply instigated damage
 		}
 	}
 

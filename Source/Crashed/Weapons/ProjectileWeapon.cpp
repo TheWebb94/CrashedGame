@@ -30,12 +30,13 @@ void AProjectileWeapon::Fire(const FVector& Origin, const FVector& AimPoint)
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = GetInstigator();
 
-
+//spawn the rocket projectile
 	AWeaponProjectile* Projectile = GetWorld()->SpawnActor<AWeaponProjectile>(
 		ProjectileClass, Origin, ShootDir.Rotation(), SpawnParams);
 
 	if (Projectile)
 	{
-		Projectile->Launch(ShootDir, TravelDist);
+		//travel the designated direction and distance, explode when reaching (rocket implements overlaps with actors before hitting range triggering explosiosn too)
+		Projectile->Launch(ShootDir, TravelDist); 
 	}
 }

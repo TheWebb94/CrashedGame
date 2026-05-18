@@ -35,7 +35,6 @@ public:
     void StopSprint();
 
     void Fire();
-    void Dash();
 
 protected:
     //Components
